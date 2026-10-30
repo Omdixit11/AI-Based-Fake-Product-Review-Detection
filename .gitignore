@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+playwright-report/
+test-results/
+
+# Env and local data
+.env
+.env.local
+*.db
+*.sqlite3
+.DS_Store
+.idea/
+.vscode/
+
+# Raw dataset is never committed (Member 2 downloads it locally)
+backend/data/raw/*
+!backend/data/raw/.gitkeep
+
+# NOTE: backend/models/* (trained artifacts + metrics.json) IS committed on purpose,
+# so Phase 3, 4 and 5 can run without the dataset.

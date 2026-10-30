@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Blocks commits that touch protected files. Enable once with:
+#   git config core.hooksPath .githooks
+PROTECTED_REGEX='^(README\.md|docs/HLD\.md|docs/LLD\.md|docs/PROJECT_STRUCTURE\.md|prompts/.*|\.githooks/.*|scripts/check_phase\.py|scripts/protected\.sha256)$'
+bad=$(git diff --cached --name-only | grep -E "$PROTECTED_REGEX" || true)
+if [ -n "$bad" ]; then
+  echo "COMMIT BLOCKED: these files are protected and must not be edited:"
+  echo "$bad"
+  echo "Undo with:  git restore --staged --worktree -- <file>"
+  exit 1
+fi
