@@ -1,0 +1,230 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------------------
+ * Design tokens — "Forensic Intelligence"
+ * Dark is the default theme; `.light` on <html> switches to the light theme.
+ * All values are RGB triplets so Tailwind's <alpha-value> syntax works.
+ * ------------------------------------------------------------------------- */
+
+:root {
+  --bg: 7 8 12;            /* #07080C */
+  --bg-elevate: 12 14 21;
+  --card: 15 17 25;
+  --line: 148 163 184;     /* slate, used at low alpha */
+  --ink: 237 239 245;
+  --ink-dim: 168 174 190;
+  --ink-faint: 106 113 132;
+  --brand: 139 92 246;     /* violet */
+  --aqua: 34 211 238;      /* cyan */
+  --fake: 244 63 94;       /* crimson/coral */
+  --genuine: 52 211 153;   /* emerald/mint */
+  --warn: 251 191 36;      /* amber */
+
+  --radius-card: 22px;
+  --radius-pill: 999px;
+
+  --shadow-glass: 0 8px 32px -12px rgb(0 0 0 / 0.55);
+  --shadow-lift: 0 16px 48px -16px rgb(0 0 0 / 0.6);
+}
+
+.light {
+  --bg: 247 246 243;       /* #F7F6F3 warm off-white */
+  --bg-elevate: 255 255 255;
+  --card: 255 255 255;
+  --line: 15 23 42;        /* slate-900, used at low alpha */
+  --ink: 19 23 34;
+  --ink-dim: 75 82 100;
+  --ink-faint: 135 142 160;
+  --brand: 124 58 237;
+  --aqua: 8 145 178;
+  --fake: 225 29 72;
+  --genuine: 5 150 105;
+  --warn: 217 119 6;
+
+  --shadow-glass: 0 8px 32px -14px rgb(15 23 42 / 0.18);
+  --shadow-lift: 0 16px 48px -18px rgb(15 23 42 / 0.22);
+}
+
+@layer base {
+  * {
+    border-color: rgb(var(--line) / 0.12);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--ink));
+    font-family: var(--font-inter), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: rgb(var(--brand) / 0.35);
+    color: rgb(var(--ink));
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--aqua) / 0.9);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  /* Slim, theme-aware scrollbars */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--line) / 0.25);
+    border-radius: 999px;
+    border: 2px solid rgb(var(--bg));
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--line) / 0.4);
+  }
+
+  /* Numeric tabular figures everywhere the mono font is used */
+  .font-mono,
+  code,
+  kbd {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Fixed aurora backdrop: two drifting radial washes + dotted grid + grain */
+  .aurora-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .aurora-bg::before,
+  .aurora-bg::after {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background:
+      radial-gradient(38% 30% at 22% 18%, rgb(var(--brand) / 0.16), transparent 70%),
+      radial-gradient(34% 30% at 78% 12%, rgb(var(--aqua) / 0.1), transparent 70%),
+      radial-gradient(42% 38% at 60% 85%, rgb(var(--brand) / 0.1), transparent 70%);
+  }
+  .aurora-bg::after {
+    background: radial-gradient(30% 26% at 85% 70%, rgb(var(--aqua) / 0.08), transparent 70%);
+    animation: aurora-drift-2 32s ease-in-out infinite;
+  }
+  .aurora-bg > .aurora-drift-layer {
+    position: absolute;
+    inset: -20%;
+    animation: aurora-drift 26s ease-in-out infinite;
+  }
+
+  .dot-grid {
+    background-image: radial-gradient(rgb(var(--line) / 0.14) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .grain::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+  }
+  .light .grain::before {
+    opacity: 0.035;
+  }
+
+  /* Glass card primitive */
+  .glass {
+    background: rgb(var(--card) / 0.6);
+    border: 1px solid rgb(var(--line) / 0.12);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-glass);
+  }
+  .light .glass {
+    background: rgb(var(--card) / 0.75);
+  }
+
+  /* Skeleton shimmer */
+  .skeleton {
+    border-radius: 12px;
+    background: linear-gradient(
+      90deg,
+      rgb(var(--line) / 0.08) 25%,
+      rgb(var(--line) / 0.16) 37%,
+      rgb(var(--line) / 0.08) 63%
+    );
+    background-size: 600px 100%;
+    animation: shimmer 1.8s linear infinite;
+  }
+
+  /* Brand gradient text (brand moments only) */
+  .text-gradient {
+    background: linear-gradient(100deg, rgb(var(--brand)), rgb(var(--aqua)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Verdict color helpers — single source for fake/genuine semantics */
+  .text-verdict-fake { color: rgb(var(--fake)); }
+  .text-verdict-genuine { color: rgb(var(--genuine)); }
+  .bg-verdict-fake { background-color: rgb(var(--fake)); }
+  .bg-verdict-genuine { background-color: rgb(var(--genuine)); }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  /* Scanning sweep used by the analyzer while "working" */
+  .scanline {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 34%;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--aqua) / 0.12) 45%,
+      rgb(var(--aqua) / 0.3) 50%,
+      rgb(var(--aqua) / 0.12) 55%,
+      transparent
+    );
+    animation: scan-sweep 1.6s ease-in-out infinite;
+    pointer-events: none;
+  }
+}
+
+/* Respect reduced motion: kill decorative animation, keep opacity transitions */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .aurora-bg::before,
+  .aurora-bg::after,
+  .aurora-drift-layer,
+  .scanline {
+    animation: none !important;
+  }
+}
