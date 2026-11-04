@@ -53,6 +53,33 @@ def _origins_env(name: str, default: str) -> list[str]:
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
 
+_TRUE_VALUES = ("1", "true", "yes", "on")
+_FALSE_VALUES = ("0", "false", "no", "off")
+
+
+def _bool_env(name: str, default: bool = True) -> bool:
+    """Feature switch. Unset means the feature is ON; anything unreadable too."""
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return default
+    value = raw.strip().lower()
+    if value in _TRUE_VALUES:
+        return True
+    if value in _FALSE_VALUES:
+        return False
+    return default
+
+
+def _float_env(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    if raw is None or not raw.strip():
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
+
+
 class Settings:
     """Mutable settings bundle (env-driven, patchable in tests)."""
 
@@ -82,6 +109,33 @@ class Settings:
 
         self.history_default_limit: int = _int_env("HISTORY_DEFAULT_LIMIT", 50)
         self.history_max_limit: int = _int_env("HISTORY_MAX_LIMIT", 500)
+
+        # --- Phase 3.5 optional features (see docs/ADVANCED_FEATURES.md) -----
+        # Switches. Each one only adds new optional response fields; with all
+        # three off the /api/predict body is the Phase 3 body, key for key.
+        self.enable_tier1: bool = _bool_env("ENABLE_TIER1", True)
+        self.enable_sarcasm: bool = _bool_env("ENABLE_SARCASM", True)
+
+        # Tier-1 rule filter. Behaviour counters are in-memory per process.
+        self.tier1_max_reviews_per_minute: int = _int_env(
+            "TIER1_MAX_REVIEWS_PER_MINUTE", 5
+        )
+        self.tier1_duplicate_threshold: int = _int_env(
+            "TIER1_DUPLICATE_THRESHOLD", 3
+        )
+        self.tier1_min_words: int = _int_env("TIER1_MIN_WORDS", 4)
+        self.tier1_velocity_window_seconds: int = _int_env(
+            "TIER1_VELOCITY_WINDOW_SECONDS", 60
+        )
+        self.tier1_duplicate_window_seconds: int = _int_env(
+            "TIER1_DUPLICATE_WINDOW_SECONDS", 600
+        )
+        # Cap on tracked users / distinct texts; the oldest entry is dropped.
+        self.tier1_max_tracked_keys: int = _int_env("TIER1_MAX_TRACKED_KEYS", 2000)
+
+        # Sarcasm flag: 0-1 contrast score needed before SARCASM_SUSPECTED is
+        # raised. Heuristic only - it never changes the verdict.
+        self.sarcasm_threshold: float = _float_env("SARCASM_THRESHOLD", 0.6)
 
 
 settings = Settings()

@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import csv
 import io
+import time
+from datetime import datetime, timezone
 from typing import Any
 
 import pandas as pd
@@ -20,6 +22,7 @@ from app.schemas import (
     PredictRequest,
     error_detail,
 )
+from app.services import sarcasm, tier1
 from app.services.predictor import ModelArtifactError, predictor
 
 router = APIRouter(prefix="/api", tags=["predict"])
@@ -28,7 +31,7 @@ MAX_ERROR_ROWS_SHOWN = 5
 
 
 def _prediction_to_response(review: str, prediction, entry_id: int) -> dict[str, Any]:
-    return {
+    body: dict[str, Any] = {
         "id": entry_id,
         "verdict": prediction.verdict,
         "fake_probability": prediction.fake_probability,
@@ -42,6 +45,14 @@ def _prediction_to_response(review: str, prediction, entry_id: int) -> dict[str,
         "created_at": prediction.created_at,
         "token_map": prediction.token_map,
     }
+    # Phase 3.5: new keys appear only while the matching switch is on, so a
+    # response built with everything off is the Phase 3 response, key for key.
+    if settings.enable_tier1:
+        body["tier1"] = prediction.tier1 or tier1.empty_result()
+        body["decision_source"] = prediction.decision_source
+    if settings.enable_sarcasm and prediction.sarcasm is not None:
+        body["sarcasm"] = prediction.sarcasm
+    return body
 
 
 def _save_history(review: str, prediction) -> int:
@@ -73,6 +84,9 @@ def _save_history(review: str, prediction) -> int:
 @router.post(
     "/predict",
     response_model=PredictionResponse,
+    # Off switches leave tier1/sarcasm/decision_source as None, and None fields
+    # are then absent from the JSON - the Phase 3 key set, unchanged.
+    response_model_exclude_none=True,
     summary="Analyze a single review",
     responses={
         400: {"model": None, "description": "Invalid review payload"},
@@ -81,19 +95,47 @@ def _save_history(review: str, prediction) -> int:
     },
 )
 def predict(payload: PredictRequest) -> dict[str, Any]:
-    """Classify one review, explain it, and store it in the history."""
+    """Classify one review, explain it, and store it in the history.
+
+    Order (Phase 3.5): Tier-1 rules, then the model unless a hard rule already
+    decided, then the sarcasm contrast, then build the response.
+    """
     review = payload.review
-    try:
-        prediction = predictor.predict_one(review, payload.model, payload.rating)
-    except ModelArtifactError as exc:
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=error_detail("MODELS_NOT_LOADED", exc.friendly_message()),
-        ) from exc
-    except ValueError as exc:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST, detail=error_detail("INVALID_MODEL", str(exc))
-        ) from exc
+    metadata = payload.metadata.model_dump() if payload.metadata else None
+    started = time.perf_counter()
+
+    tier1_result = tier1.evaluate(review, metadata) if settings.enable_tier1 else None
+
+    if tier1_result is not None and tier1.short_circuited(tier1_result):
+        # Hard rule: the artefacts are never touched for this request.
+        rule_latency = int((time.perf_counter() - started) * 1000)
+        prediction = predictor.rule_only_prediction(
+            review, payload.rating, rule_latency
+        )
+        prediction.tier1 = tier1.as_response_block(tier1_result)
+    else:
+        try:
+            prediction = predictor.predict_one(review, payload.model, payload.rating)
+        except ModelArtifactError as exc:
+            raise HTTPException(
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=error_detail("MODELS_NOT_LOADED", exc.friendly_message()),
+            ) from exc
+        except ValueError as exc:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                detail=error_detail("INVALID_MODEL", str(exc)),
+            ) from exc
+        if tier1_result is not None:
+            # Soft signals are reported in their own block; the existing
+            # ``flags`` list keeps exactly the Phase 3 rules.
+            prediction.tier1 = tier1.as_response_block(tier1_result)
+
+    if settings.enable_sarcasm:
+        # Runs after the model and never revisits verdict or fake_probability.
+        sarcasm_result = sarcasm.analyze(review)
+        prediction.sarcasm = sarcasm_result
+        prediction.flags = sarcasm.add_flag(prediction.flags, sarcasm_result)
 
     entry_id = _save_history(review, prediction)
     return _prediction_to_response(review, prediction, entry_id)
@@ -136,7 +178,7 @@ def _normalise_columns(frame: pd.DataFrame) -> pd.DataFrame:
     return frame
 
 
-def _parse_batch(frame: pd.DataFrame) -> tuple[list[str], list[int | None]]:
+def _parse_batch(frame: pd.DataFrame) -> tuple[list[str], list[int | None], list[dict[str, Any]]]:
     if "review" not in frame.columns:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
@@ -224,7 +266,75 @@ def _parse_batch(frame: pd.DataFrame) -> tuple[list[str], list[int | None]]:
                     f"{settings.max_rating} (bad rows: {shown}...).",
                 ),
             )
-    return reviews, ratings
+    return reviews, ratings, _parse_batch_metadata(frame, len(reviews))
+
+
+def _is_blank(value: Any) -> bool:
+    return value is None or (isinstance(value, float) and pd.isna(value))
+
+
+def _parse_batch_metadata(
+    frame: pd.DataFrame, expected: int
+) -> list[dict[str, Any]]:
+    """Per-row Tier-1 context from the optional ``user_id`` / ``posted_at`` columns.
+
+    A CSV that has neither column returns ``[]``, which the endpoint reads as
+    "no behaviour signals available" - the batch then behaves exactly like it
+    did in Phase 3.
+    """
+    if "user_id" not in frame.columns and "posted_at" not in frame.columns:
+        return []
+
+    user_values = (
+        frame["user_id"].tolist() if "user_id" in frame.columns else [None] * expected
+    )
+    posted_values = (
+        frame["posted_at"].tolist() if "posted_at" in frame.columns else [None] * expected
+    )
+
+    metas: list[dict[str, Any]] = []
+    bad_timestamps: list[int] = []
+    for position, (user_value, posted_value) in enumerate(
+        zip(user_values, posted_values), start=1
+    ):
+        meta: dict[str, Any] = {}
+        if not _is_blank(user_value):
+            user_id = str(user_value).strip()[:128]
+            if user_id:
+                meta["user_id"] = user_id
+        if not _is_blank(posted_value):
+            raw = str(posted_value).strip()
+            if raw:
+                parsed = _parse_iso_timestamp(raw)
+                if parsed is None:
+                    bad_timestamps.append(position)
+                else:
+                    meta["posted_at"] = parsed
+        metas.append(meta)
+
+    if bad_timestamps:
+        shown = ", ".join(str(row) for row in bad_timestamps[:MAX_ERROR_ROWS_SHOWN])
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail=error_detail(
+                "CSV_INVALID_POSTED_AT",
+                f"'posted_at' must be an ISO-8601 timestamp such as "
+                f"2026-01-31T09:15:00Z (bad rows: {shown}...).",
+            ),
+        )
+    return metas
+
+
+def _parse_iso_timestamp(raw: str) -> datetime | None:
+    """ISO-8601 with an optional trailing Z; naive timestamps are read as UTC."""
+    candidate = raw[:-1] + "+00:00" if raw.endswith(("Z", "z")) else raw
+    try:
+        parsed = datetime.fromisoformat(candidate)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
 
 
 def _summary(predictions) -> dict[str, Any]:
@@ -272,7 +382,13 @@ def _batch_csv(rows: list[dict]) -> str:
     },
 )
 async def predict_batch(
-    file: UploadFile = File(..., description="CSV with a required 'review' column"),
+    file: UploadFile = File(
+        ...,
+        description=(
+            "CSV with a required 'review' column. Optional: 'rating' (1-5), "
+            "and for Tier-1 'user_id' / 'posted_at' (ISO-8601)."
+        ),
+    ),
     model: str = Query("best", description="best | nb | svm"),
     output_format: str = Query("json", alias="format", description="json | csv"),
 ):
@@ -302,10 +418,27 @@ async def predict_batch(
 
     text = _decode_csv(raw)
     frame = _normalise_columns(_read_csv_frame(text))
-    reviews, ratings = _parse_batch(frame)
+    reviews, ratings, metas = _parse_batch(frame)
 
+    # Tier-1 inside the file: only when the upload actually carries behaviour
+    # columns, and always against a tracker scoped to this upload so a CSV can
+    # never contaminate the server-side counters.
+    tier1_active = settings.enable_tier1 and bool(metas)
+    flagged: set[int] = set()
+    if tier1_active:
+        file_tracker = tier1.Tier1Tracker()
+        for index, (review, meta) in enumerate(zip(reviews, metas)):
+            result = tier1.evaluate(review, meta, tracker_obj=file_tracker)
+            if tier1.short_circuited(result):
+                flagged.add(index)
+
+    model_rows = [index for index in range(len(reviews)) if index not in flagged]
     try:
-        predictions = predictor.predict_many(reviews, model, ratings)
+        scored = predictor.predict_many(
+            [reviews[index] for index in model_rows],
+            model,
+            [ratings[index] for index in model_rows],
+        )
     except ModelArtifactError as exc:
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -315,6 +448,15 @@ async def predict_batch(
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, detail=error_detail("INVALID_MODEL", str(exc))
         ) from exc
+
+    predictions: list[Any] = [None] * len(reviews)
+    for index, prediction in zip(model_rows, scored):
+        predictions[index] = prediction
+    for index in flagged:
+        # Hard rule in the file: same vectorised path, minus the model.
+        predictions[index] = predictor.rule_only_prediction(
+            reviews[index], ratings[index]
+        )
 
     rows = [
         BatchRow(
@@ -342,7 +484,12 @@ async def predict_batch(
             },
         )
 
-    return BatchResponse(rows=rows, summary=BatchSummary(**_summary(predictions)))
+    summary = _summary(predictions)
+    if tier1_active:
+        # New optional key: only a CSV with user_id / posted_at changes shape.
+        summary["tier1_flagged"] = len(flagged)
+        return {"rows": rows, "summary": summary}
+    return BatchResponse(rows=rows, summary=BatchSummary(**summary))
 
 
 def validate_predict_payload(payload: dict) -> PredictRequest:
