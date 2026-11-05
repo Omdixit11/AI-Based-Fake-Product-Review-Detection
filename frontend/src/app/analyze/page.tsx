@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import { motion } from "framer-motion";
 import { ClipboardCopy, FileText, Gauge, ListChecks, MessageSquareText, Type } from "lucide-react";
 import { api } from "@/lib/api";
-import type { ModelChoice, PredictionResult } from "@/lib/types";
+import type { ModelChoice, PredictMetadata, PredictionResult } from "@/lib/types";
 import { useToast } from "@/app/providers";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/chip";
@@ -15,6 +15,9 @@ import { SentimentMeter } from "@/components/analyzer/SentimentMeter";
 import { HighlightedText } from "@/components/analyzer/HighlightedText";
 import { TopTokens } from "@/components/analyzer/TopTokens";
 import { FlagList } from "@/components/analyzer/FlagList";
+import { Tier1Banner } from "@/components/analyzer/Tier1Banner";
+import { SarcasmBadge } from "@/components/analyzer/SarcasmBadge";
+import { ExplainPanel } from "@/components/analyzer/ExplainPanel";
 
 const reveal = {
   initial: { opacity: 0, y: 14 },
@@ -24,17 +27,25 @@ const reveal = {
 function ResultPanel({
   result,
   review,
+  model,
   onCopy,
 }: {
   result: PredictionResult;
   review: string;
+  model: ModelChoice;
   onCopy: () => void;
 }) {
+  // Tier-1 hard rules skip the model, so there are no token weights to show.
+  const decidedByRules = result.model_used === "tier1_rules";
+
   return (
     <div className="flex flex-col gap-4">
       <motion.div {...reveal} transition={{ duration: 0.35 }}>
         <VerdictCard result={result} />
       </motion.div>
+
+      <Tier1Banner tier1={result.tier1} />
+      <SarcasmBadge sarcasm={result.sarcasm} />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <motion.div {...reveal} transition={{ duration: 0.35, delay: 0.08 }}>
@@ -71,7 +82,11 @@ function ResultPanel({
           <Card className="h-full">
             <CardHeader
               title="Top contributing tokens"
-              subtitle={`${result.model_used.toUpperCase()} feature weights`}
+              subtitle={
+                decidedByRules
+                  ? "Rule decision — no model weights to attribute"
+                  : `${result.model_used.toUpperCase()} feature weights`
+              }
               action={<Gauge className="h-4 w-4 text-faint" aria-hidden />}
             />
             <TopTokens tokens={result.tokens} limit={5} />
@@ -91,6 +106,10 @@ function ResultPanel({
       </div>
 
       <motion.div {...reveal} transition={{ duration: 0.35, delay: 0.34 }}>
+        <ExplainPanel review={review} model={model} />
+      </motion.div>
+
+      <motion.div {...reveal} transition={{ duration: 0.35, delay: 0.38 }}>
         <Card>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap gap-x-8 gap-y-3 font-mono text-sm">
@@ -168,6 +187,7 @@ export default function AnalyzePage() {
   const [review, setReview] = useState("");
   const [rating, setRating] = useState<number | undefined>(undefined);
   const [model, setModel] = useState<ModelChoice>("best");
+  const [metadata, setMetadata] = useState<PredictMetadata>({});
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<PredictionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -178,8 +198,13 @@ export default function AnalyzePage() {
     setScanning(true);
     setError(null);
     try {
-      const res = await api.predict({ review: review.trim(), rating, model });
+      const res = await api.predict({ review: review.trim(), rating, model, metadata });
       setResult(res);
+      if (res.tier1?.triggered) {
+        toast("info", "Flagged by Tier-1 rules — the model was skipped for this review.");
+      } else if (res.sarcasm?.suspected) {
+        toast("info", "Possible sarcasm detected — worth a human read.");
+      }
     } catch (e) {
       const message = e instanceof Error ? e.message : "Analysis failed.";
       setError(message);
@@ -187,16 +212,27 @@ export default function AnalyzePage() {
     } finally {
       setScanning(false);
     }
-  }, [review, rating, model, scanning, toast]);
+  }, [review, rating, model, metadata, scanning, toast]);
 
   const copyResult = useCallback(async () => {
     if (!result) return;
+    const fromRules = result.model_used === "tier1_rules";
     const text = [
       `TruthLens verdict: Likely ${result.verdict === "fake" ? "FAKE" : "GENUINE"} review`,
-      `Fake probability: ${(result.fake_probability * 100).toFixed(0)}% (confidence ${(result.confidence * 100).toFixed(0)}%)`,
+      fromRules
+        ? `Decided by Tier-1 rules (${(result.tier1?.rules ?? [])
+            .filter((r) => r.kind === "hard")
+            .map((r) => r.code)
+            .join(", ")}) — the ML model was not consulted`
+        : `Fake probability: ${(result.fake_probability * 100).toFixed(0)}% (confidence ${(result.confidence * 100).toFixed(0)}%)`,
       `Model: ${result.model_used.toUpperCase()} · Sentiment: ${result.sentiment.label} (${result.sentiment.compound})`,
+      result.sarcasm?.suspected
+        ? `Sarcasm suspected (contrast ${result.sarcasm.score.toFixed(2)}) — needs human review, not automatically fake`
+        : null,
       `Red flags: ${result.flags.length ? result.flags.map((f) => f.label).join("; ") : "none"}`,
-    ].join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
     try {
       await navigator.clipboard.writeText(text);
       toast("success", "Result copied to clipboard.");
@@ -225,6 +261,8 @@ export default function AnalyzePage() {
           onRatingChange={setRating}
           model={model}
           onModelChange={setModel}
+          metadata={metadata}
+          onMetadataChange={setMetadata}
           scanning={scanning}
           onAnalyze={analyze}
         />
@@ -239,7 +277,12 @@ export default function AnalyzePage() {
             </Card>
           )}
           {!scanning && result && (
-            <ResultPanel result={result} review={review} onCopy={copyResult} />
+            <ResultPanel
+              result={result}
+              review={review}
+              model={model}
+              onCopy={copyResult}
+            />
           )}
           {!scanning && !result && !error && <EmptyState />}
         </div>

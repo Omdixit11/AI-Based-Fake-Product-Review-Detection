@@ -8,8 +8,11 @@
  */
 
 import { mockApi } from "./mockApi";
+import { cleanMetadata } from "./utils";
 import type {
   BatchResult,
+  ExplainRequest,
+  ExplainResponse,
   HealthResponse,
   HistoryListResponse,
   MetricsResponse,
@@ -51,10 +54,26 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const realApi = {
   async predict(req: PredictRequest): Promise<PredictionResult> {
+    const { metadata: rawMetadata, ...rest } = req;
+    const metadata = cleanMetadata(rawMetadata);
+    const body = metadata ? { ...rest, metadata } : rest;
     return request<PredictionResult>("/api/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(req),
+      body: JSON.stringify(body),
+    });
+  },
+
+  /**
+   * Phase 3.5 — on-demand token attribution. Separate from predict() so the
+   * analyze page only pays for it when the user asks, and it can 404/501 on an
+   * older backend without affecting anything else.
+   */
+  async explain(req: ExplainRequest): Promise<ExplainResponse> {
+    return request<ExplainResponse>("/api/explain", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ review: req.review, model: req.model }),
     });
   },
 

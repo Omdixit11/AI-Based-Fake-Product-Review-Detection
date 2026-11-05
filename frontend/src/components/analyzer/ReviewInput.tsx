@@ -2,15 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Eraser, ScanSearch, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+import {
+  Check,
+  ChevronRight,
+  Eraser,
+  ScanSearch,
+  SlidersHorizontal,
+  Sparkles,
+  User,
+  Zap,
+} from "lucide-react";
+import { cn, cleanMetadata, SAMPLE_REVIEWS } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
-import type { ModelChoice } from "@/lib/types";
+import type { ModelChoice, PredictMetadata } from "@/lib/types";
 import { ModelSwitch } from "./ModelSwitch";
 import { StarRating } from "./StarRating";
-import { SAMPLE_REVIEWS } from "@/lib/utils";
 
 const MAX_CHARS = 2000;
 const SCAN_STAGES = ["Cleaning text", "Extracting features", "Scoring review"];
@@ -18,6 +26,10 @@ const SCAN_STAGES = ["Cleaning text", "Extracting features", "Scoring review"];
 /**
  * Left-column input card: textarea, counter, optional rating,
  * model switch, sample chips and the Analyze action (Ctrl+Enter).
+ *
+ * The collapsed "Advanced" disclosure adds the Phase 3.5 Tier-1 metadata. It is
+ * closed by default so the card looks exactly like it did in Phase 3 until the
+ * reviewer chooses to open it.
  */
 export function ReviewInput({
   value,
@@ -26,6 +38,8 @@ export function ReviewInput({
   onRatingChange,
   model,
   onModelChange,
+  metadata,
+  onMetadataChange,
   scanning,
   onAnalyze,
 }: {
@@ -35,11 +49,14 @@ export function ReviewInput({
   onRatingChange: (v: number | undefined) => void;
   model: ModelChoice;
   onModelChange: (v: ModelChoice) => void;
+  metadata: PredictMetadata;
+  onMetadataChange: (m: PredictMetadata) => void;
   scanning: boolean;
   onAnalyze: () => void;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [stage, setStage] = useState(0);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   // Listen for the command palette's "load sample" requests.
   useEffect(() => {
@@ -76,6 +93,8 @@ export function ReviewInput({
 
   const chars = value.length;
   const nearLimit = chars > MAX_CHARS * 0.9;
+  // Only the fields the reviewer actually filled in count as "set".
+  const advancedCount = Object.keys(cleanMetadata(metadata) ?? {}).length;
 
   return (
     <Card className="relative overflow-hidden">
@@ -88,8 +107,9 @@ export function ReviewInput({
             onClick={() => {
               onChange("");
               onRatingChange(undefined);
+              onMetadataChange({});
             }}
-            disabled={!value && rating === undefined}
+            disabled={!value && rating === undefined && advancedCount === 0}
             className="inline-flex items-center gap-1.5 rounded-pill border border-line/15 px-3 py-1.5 text-xs text-dim transition-colors hover:text-ink disabled:opacity-40"
           >
             <Eraser className="h-3.5 w-3.5" /> Clear
@@ -178,6 +198,99 @@ export function ReviewInput({
             {s.label}
           </Chip>
         ))}
+      </div>
+
+      {/* Phase 3.5 — optional Tier-1 metadata, collapsed by default. */}
+      <div className="mt-5 rounded-xl border border-line/10 bg-line/4">
+        <button
+          type="button"
+          onClick={() => setAdvancedOpen((o) => !o)}
+          aria-expanded={advancedOpen}
+          aria-controls="advanced-metadata"
+          className={cn(
+            "flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-line/6",
+            "rounded-xl"
+          )}
+        >
+          <motion.span animate={{ rotate: advancedOpen ? 90 : 0 }} transition={{ duration: 0.18 }} aria-hidden>
+            <ChevronRight className="h-4 w-4 text-faint" />
+          </motion.span>
+          <SlidersHorizontal className="h-3.5 w-3.5 text-faint" aria-hidden />
+          <span className="flex-1 font-mono text-[10px] uppercase tracking-wider text-dim">
+            Advanced — reviewer context
+            {advancedCount > 0 && (
+              <span className="ml-2 rounded-pill bg-aqua/12 px-2 py-0.5 text-aqua normal-case tracking-normal">
+                {advancedCount} set
+              </span>
+            )}
+          </span>
+          <span className="font-mono text-[10px] text-faint">optional</span>
+        </button>
+
+        <AnimatePresence initial={false}>
+          {advancedOpen && (
+            <motion.div
+              id="advanced-metadata"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="grid gap-3 border-t border-line/10 px-3 py-3 sm:grid-cols-2">
+                <label className="flex flex-col gap-1.5">
+                  <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-faint">
+                    <User className="h-3 w-3" aria-hidden /> Reviewer id
+                  </span>
+                  <input
+                    type="text"
+                    value={metadata.user_id ?? ""}
+                    onChange={(e) =>
+                      onMetadataChange({ ...metadata, user_id: e.target.value.slice(0, 128) })
+                    }
+                    maxLength={128}
+                    disabled={scanning}
+                    placeholder="u-1042"
+                    className="rounded-lg border border-line/15 bg-bg/60 px-3 py-2 font-mono text-xs text-ink placeholder:text-faint focus:border-aqua/40 focus:outline-none disabled:opacity-60"
+                  />
+                  <span className="text-[10px] leading-snug text-faint">
+                    Lets the server count this reviewer&apos;s submissions in a rolling
+                    60-second window.
+                  </span>
+                </label>
+
+                <label className="flex flex-col gap-1.5">
+                  <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-faint">
+                    <Zap className="h-3 w-3" aria-hidden /> Reviews in the last minute
+                  </span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={10000}
+                    step={1}
+                    value={metadata.reviews_last_minute ?? ""}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      onMetadataChange(
+                        raw === ""
+                          ? { ...metadata, reviews_last_minute: undefined }
+                          : { ...metadata, reviews_last_minute: Number(raw) }
+                      );
+                    }}
+                    disabled={scanning}
+                    placeholder="0"
+                    className="rounded-lg border border-line/15 bg-bg/60 px-3 py-2 font-mono text-xs text-ink placeholder:text-faint focus:border-aqua/40 focus:outline-none disabled:opacity-60"
+                  />
+                  <span className="text-[10px] leading-snug text-faint">
+                    More than 5 flags the review as spam before the model runs
+                    (<span className="font-mono">VELOCITY_EXCEEDED</span>).
+                  </span>
+                </label>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <Button
