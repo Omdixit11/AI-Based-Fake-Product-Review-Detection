@@ -115,6 +115,7 @@ class Settings:
         # three off the /api/predict body is the Phase 3 body, key for key.
         self.enable_tier1: bool = _bool_env("ENABLE_TIER1", True)
         self.enable_sarcasm: bool = _bool_env("ENABLE_SARCASM", True)
+        self.enable_shap: bool = _bool_env("ENABLE_SHAP", True)
 
         # Tier-1 rule filter. Behaviour counters are in-memory per process.
         self.tier1_max_reviews_per_minute: int = _int_env(

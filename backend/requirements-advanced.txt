@@ -1,0 +1,10 @@
+# Phase 3.5 optional dependencies only.
+#
+# backend/requirements.txt stays untouched on purpose: the committed .pkl
+# artifacts must keep loading for every teammate. Nothing here is needed to
+# start the API or to run /api/predict - if shap is absent the explain
+# endpoint falls back to coefficient scores and answers 200.
+#
+# Install with the constraints file so the pinned core versions cannot move:
+#   .venv\Scripts\pip.exe install -r backend\requirements-advanced.txt -c backend\constraints-advanced.txt
+shap==0.49.1

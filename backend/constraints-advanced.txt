@@ -1,0 +1,23 @@
+# Pins every core package to the version backend/requirements.txt already fixes,
+# so installing the Phase 3.5 extras can never move numpy / scipy / pandas /
+# scikit-learn out from under the committed .pkl artifacts.
+#
+# Derived from backend/requirements.txt (same versions, extras stripped:
+# uvicorn[standard] -> uvicorn). This file constrains; it installs nothing by
+# itself. Use it with:
+#   .venv\Scripts\pip.exe install -r backend\requirements-advanced.txt -c backend\constraints-advanced.txt
+numpy==1.26.4
+scipy==1.13.1
+pandas==2.2.2
+scikit-learn==1.5.2
+imbalanced-learn==0.12.4
+joblib==1.4.2
+nltk==3.9.1
+textblob==0.18.0.post0
+fastapi==0.115.0
+uvicorn==0.30.6
+pydantic==2.9.2
+SQLAlchemy==2.0.35
+python-multipart==0.0.12
+httpx==0.27.2
+pytest==8.3.3

@@ -26,6 +26,10 @@ TokenDirection = Literal["fake", "genuine"]
 SentimentLabel = Literal["Positive", "Mixed", "Negative"]
 Tier1Action = Literal["pass", "flag_spam"]
 RuleKind = Literal["soft", "hard"]
+# Honest labels for POST /api/explain: shap-linear is the real library,
+# linear-coefficients is the identical value computed without it, and
+# naive-bayes-logprob is a log-probability difference (not SHAP).
+ExplainMethodChoice = Literal["shap-linear", "linear-coefficients", "naive-bayes-logprob"]
 
 # --- error envelope: {"error": {"code": ..., "message": ...}} ---
 ERROR_ENVELOPE_EXAMPLE = {"error": {"code": "VALIDATION_ERROR", "message": "..."}}
@@ -262,6 +266,60 @@ class ModelInfo(BaseModel):
     default: ModelChoice = "best"
     best_model: ModelUsed = "svm"
     active_feature_set: str = "tfidf_only"
+
+
+class ExplainRequest(BaseModel):
+    """POST /api/explain request (Phase 3.5, additive endpoint).
+
+    Validation mirrors ``/api/predict`` exactly: same length limits, same model
+    choices, unknown keys rejected.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    review: str
+    model: str = "best"
+
+    @field_validator("review")
+    @classmethod
+    def _review_length(cls, value: str) -> str:
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(
+                f"'review' must be a non-empty string (1-{settings.max_review_chars} characters)."
+            )
+        if len(value) > settings.max_review_chars:
+            raise ValueError(
+                f"'review' is too long: {len(value)} characters, maximum is "
+                f"{settings.max_review_chars}."
+            )
+        return value
+
+    @field_validator("model")
+    @classmethod
+    def _known_model(cls, value: str) -> str:
+        if value not in MODEL_CHOICES:
+            raise ValueError(
+                f"'model' must be one of {list(MODEL_CHOICES)}, got {value!r}."
+            )
+        return value
+
+
+class ExplainResponse(BaseModel):
+    """POST /api/explain response.
+
+    ``method`` states honestly which explanation was produced: real SHAP, the
+    identical value computed without the library, or the Naive Bayes
+    log-probability difference (which is not SHAP).
+    """
+
+    model_config = ConfigDict(protected_namespaces=())
+
+    method: ExplainMethodChoice
+    model_used: ModelUsed
+    base_value: float
+    tokens: list[TokenScore] = Field(default_factory=list)
+    token_map: dict[str, list[str]] = Field(default_factory=dict)
+    latency_ms: int
 
 
 class HistoryEntry(BaseModel):
