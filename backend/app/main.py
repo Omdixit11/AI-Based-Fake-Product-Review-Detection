@@ -22,7 +22,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import APP_NAME, APP_VERSION, settings
 from app.db.database import database
-from app.routers import health, history, models, predict
+from app.routers import explain, health, history, models, predict
 from app.services.predictor import ModelArtifactError, predictor
 
 logger = logging.getLogger("truthlens.api")
@@ -224,6 +224,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 
 app.include_router(predict.router)
+app.include_router(explain.router)
 app.include_router(models.router)
 app.include_router(history.router)
 app.include_router(health.router)

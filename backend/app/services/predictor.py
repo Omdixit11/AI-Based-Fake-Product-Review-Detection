@@ -81,6 +81,11 @@ class Prediction:
     latency_ms: int = 0
     created_at: str = ""
     review_text: str = ""
+    # Phase 3.5 (optional; the defaults leave every Phase 3 path untouched):
+    # Tier-1 / sarcasm blocks plus what actually decided this verdict.
+    tier1: dict | None = None
+    sarcasm: dict | None = None
+    decision_source: str = "model"
 
 
 class Predictor:
@@ -202,6 +207,39 @@ class Predictor:
     def _fake_probabilities(self, model, matrix) -> np.ndarray:
         proba = np.asarray(model.predict_proba(matrix), dtype=float)
         return proba[:, self.fake_column(model)]
+
+    def rule_only_prediction(
+        self,
+        review: str,
+        rating: int | None = None,
+        latency_ms: int = 0,
+    ) -> Prediction:
+        """Verdict decided by Tier-1 rules, with the model left untouched.
+
+        Reached only when a HARD rule fired (velocity / duplicate flood). It
+        deliberately does not call ``load()``: no artefact is read, no TF-IDF
+        transform runs, no ``predict_proba`` is called. The score is a fixed
+        ``1.0`` *because it is a rule decision, not a model probability* - the
+        classifier never saw this text. Sentiment and the shallow counters are
+        the cheap VADER/metadata path the rest of the API already uses.
+        """
+        senti = sentiment.analyze(review)
+        meta = flags.count_meta(review)
+        return Prediction(
+            verdict="fake",
+            fake_probability=1.0,
+            confidence=1.0,
+            model_used="tier1_rules",
+            sentiment=senti,
+            flags=flags.detect_flags(review, senti, rating, meta),
+            tokens=[],
+            token_map={},
+            meta=meta,
+            latency_ms=max(int(latency_ms), 1),
+            created_at=_iso_now(),
+            review_text=review,
+            decision_source="tier1_rules",
+        )
 
     def predict_one(
         self,

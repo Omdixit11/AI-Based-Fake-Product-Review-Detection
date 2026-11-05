@@ -44,15 +44,26 @@ export function VerdictCard({ result }: { result: PredictionResult }) {
             Likely {fake ? "Fake" : "Genuine"}
           </h2>
           <p className="mt-2 text-sm text-dim">
-            Model confidence{" "}
-            <span className="font-mono font-semibold text-ink">
-              {formatPercent(result.confidence)}
-            </span>{" "}
-            · scored by{" "}
-            <span className="font-mono font-semibold text-ink uppercase">
-              {result.model_used}
-            </span>{" "}
-            in <span className="font-mono text-ink">{result.latency_ms} ms</span>
+            {result.model_used === "tier1_rules" ? (
+              <>
+                Auto-flagged by rules at{" "}
+                <span className="font-mono font-semibold text-ink">100%</span> — the{" "}
+                <span className="font-mono font-semibold text-ink uppercase">model</span>{" "}
+                was not consulted
+              </>
+            ) : (
+              <>
+                Model confidence{" "}
+                <span className="font-mono font-semibold text-ink">
+                  {formatPercent(result.confidence)}
+                </span>{" "}
+                · scored by{" "}
+                <span className="font-mono font-semibold text-ink uppercase">
+                  {result.model_used}
+                </span>{" "}
+                in <span className="font-mono text-ink">{result.latency_ms} ms</span>
+              </>
+            )}
           </p>
         </div>
         <motion.span

@@ -1,8 +1,35 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import type { PredictMetadata } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+/**
+ * Phase 3.5 — normalise the optional predict metadata before it is sent.
+ * The backend uses extra="forbid" and rejects a blank user_id, so only fields
+ * the reviewer actually filled in survive; an empty object becomes undefined,
+ * which makes the request identical to a Phase 3 one.
+ */
+export function cleanMetadata(
+  metadata: PredictMetadata | undefined
+): PredictMetadata | undefined {
+  if (!metadata) return undefined;
+  const out: PredictMetadata = {};
+  const userId = metadata.user_id?.trim();
+  if (userId) out.user_id = userId.slice(0, 128);
+  if (metadata.posted_at) out.posted_at = metadata.posted_at;
+  const velocity = metadata.reviews_last_minute;
+  if (typeof velocity === "number" && Number.isFinite(velocity)) {
+    out.reviews_last_minute = Math.max(0, Math.min(10000, Math.round(velocity)));
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+/** True when a prediction came from the Tier-1 rules instead of a model. */
+export function isRuleDecision(modelUsed: string): boolean {
+  return modelUsed === "tier1_rules";
 }
 
 export function formatPercent(value: number, digits = 0): string {
