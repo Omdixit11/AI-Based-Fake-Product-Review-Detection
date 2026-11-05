@@ -72,6 +72,15 @@ The root README already links to these names, so the names must match exactly.
 
 ---
 
+## PHASE 3.5 ADDITIONS (added by the project owner)
+
+- `docs/API.md` must also document `POST /api/explain` and the optional fields `tier1`, `decision_source`, `sarcasm` and the optional request field `metadata`, using real responses from the running API.
+- `docs/PRESENTATION_NOTES.md` must mention the three advanced features and add viva questions on them (why rules before ML, why sarcasm does not change the verdict, why SHAP equals coefficient times value for a linear SVM, what the limitations are).
+- `docs/MODEL_REPORT.md` must state that Tier-1 and sarcasm are heuristics with no measured accuracy.
+- Do not edit `docs/ADVANCED_FEATURES.md`. Do not add `shap` to the Docker image unless the owner asks; the app works without it.
+
+---
+
 ## FINISH CHECKLIST (every item must be true before you hand off)
 
 - `docker compose up --build` starts backend (`:8000`) and frontend (`:3000`); `/api/health` returns ok and the web app works in the browser. If Docker is unavailable in your environment, say so clearly and verify everything else.

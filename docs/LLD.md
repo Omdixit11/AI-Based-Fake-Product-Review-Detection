@@ -126,3 +126,53 @@ components/
   history/      HistoryList, HistoryFilters
 lib/            api.ts (real client + switch), mockApi.ts, types.ts, utils.ts
 ```
+
+## 7. Phase 3.5 additions (optional fields, backward compatible)
+
+All additions are optional. With `ENABLE_TIER1`, `ENABLE_SARCASM` and `ENABLE_SHAP` set to `false`, `/api/predict` returns exactly the Phase 3 shape.
+
+### Request: new optional field on `POST /api/predict`
+```json
+"metadata": { "user_id": "string?", "posted_at": "ISO-8601?", "reviews_last_minute": 0 }
+```
+
+### Response: new optional fields on `POST /api/predict`
+```json
+{
+  "tier1": {
+    "triggered": false,
+    "action": "pass | flag_spam",
+    "rules": [{ "code": "VERY_SHORT", "label": "...", "severity": "low | medium | high", "kind": "soft | hard" }]
+  },
+  "decision_source": "model | tier1_rules",
+  "sarcasm": { "suspected": true, "score": 0.82, "risk_level": "high", "positive_cues": ["wow"], "negative_cues": ["garbage"] }
+}
+```
+- Hard Tier-1 rules (`VELOCITY_EXCEEDED`, `DUPLICATE_FLOOD`) skip the model: `verdict = "fake"`, `model_used = "tier1_rules"`, `decision_source = "tier1_rules"`. The probability then is a rule decision, not a model score.
+- Soft Tier-1 signals appear only inside `tier1.rules`, never in the existing `flags` list.
+- Sarcasm never changes `verdict` or `fake_probability`. When suspected it adds the flag `SARCASM_SUSPECTED` (severity high) to `flags`.
+- `model_used` may now also be `"tier1_rules"`.
+
+### Batch: optional CSV columns `user_id`, `posted_at`; `summary.tier1_flagged` is added when Tier-1 is enabled.
+
+### New endpoint: `POST /api/explain`
+Request: `{ "review": "string (1-5000)", "model": "best | nb | svm" }`
+```json
+{
+  "method": "shap-linear | naive-bayes-logprob | linear-coefficients",
+  "model_used": "svm",
+  "base_value": 0.0,
+  "tokens": [{ "token": "amaze", "score": 0.1889, "direction": "fake | genuine" }],
+  "token_map": { "amaze": ["AMAZING"] },
+  "latency_ms": 12
+}
+```
+`linear-coefficients` is the fallback when the optional `shap` package is not installed.
+
+### New modules
+| File | Responsibility |
+|---|---|
+| `backend/app/services/tier1.py` | Hard and soft spam rules, in-memory sliding windows |
+| `backend/app/services/sarcasm.py` | Sentiment-contrast sarcasm score |
+| `backend/app/services/explain_shap.py` | SHAP (linear) explanation, lazy import of `shap` |
+| `backend/app/routers/explain.py` | `POST /api/explain` |

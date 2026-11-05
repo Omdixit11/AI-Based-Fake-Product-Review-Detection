@@ -49,3 +49,18 @@ flowchart LR
     P3 --> P4[Phase 4 Integration<br/>UI + API + tests]
     P4 --> P5[Phase 5 Docker + docs]
 ```
+
+## 6. Prediction pipeline with Phase 3.5 features
+
+```mermaid
+flowchart LR
+    IN[Review + optional metadata] --> T1{Tier-1 rule filter}
+    T1 -->|hard rule hit| SP[Flag as spam<br/>model skipped]
+    T1 -->|pass| M[Tier-2 model<br/>Naive Bayes / SVM]
+    M --> SA[Sarcasm risk check]
+    SA --> OUT[Verdict + flags + sentiment]
+    OUT -. on demand .-> EX[POST /api/explain<br/>SHAP tokens]
+    SP --> OUT
+```
+
+Each of the three additions (Tier-1, sarcasm, SHAP) can be switched off with an environment variable (`ENABLE_TIER1`, `ENABLE_SARCASM`, `ENABLE_SHAP`).

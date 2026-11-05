@@ -98,6 +98,17 @@ Start with an 8-line plan and the exact commands you will use to start both serv
 
 ---
 
+## PHASE 3.5 ADDITIONS TO VERIFY (added by the project owner)
+
+Phase 3.5 added three optional features before your phase (tag `phase-3.5-complete`). Read `docs/ADVANCED_FEATURES.md` and the "Phase 3.5 additions" section of `docs/LLD.md`. In your contract check and tests also cover:
+- `/api/predict` optional fields `tier1`, `decision_source`, `sarcasm`, the optional request field `metadata`, and `model_used = "tier1_rules"`. The frontend must render them (Tier1Banner, SarcasmBadge) and must still work when they are missing.
+- `POST /api/explain` and the "Explain with SHAP" panel (real API, `svm` and `nb`). If the optional `shap` package is not installed, the fallback method `linear-coefficients` must still work.
+- Batch CSV with optional `user_id` and `posted_at` columns, and `summary.tier1_flagged`.
+- One Playwright spec for: Tier-1 hard rule (send `reviews_last_minute = 9`), sarcasm badge, and the explain panel.
+- Do not edit `docs/ADVANCED_FEATURES.md`; list any problem you find in `docs/INTEGRATION_REPORT.md`.
+
+---
+
 ## FINISH CHECKLIST (every item must be true before you hand off)
 
 - Backend (`:8000`) and frontend (`:3000`) run together and every page works with REAL data (mock off).

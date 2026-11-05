@@ -19,6 +19,9 @@ It uses **NLP, TF-IDF, Sentiment Analysis (VADER), Naive Bayes and SVM**, a Fast
 - Batch analysis: upload a CSV, get a summary, filter results, export CSV
 - Model Lab: accuracy, precision, recall, F1, ROC-AUC, confusion matrices, ROC curves, TF-IDF vs TF-IDF + sentiment
 - History of every analysis (search, filter, delete)
+- **Tier-1 rule filter:** instantly flags obvious spam (review flooding, copy-paste floods) before the ML model runs
+- **Sarcasm risk flag:** warns when a review opens positive but ends with a strongly negative outcome
+- **SHAP explanations:** on-demand explanation of which words pushed the SVM toward fake or genuine
 - "How it works" animated pipeline, dark and light theme, responsive
 
 ## 2. Tech stack
@@ -57,13 +60,18 @@ Nobody works in parallel. Nobody skips a phase.
 | 1 | Phase 1: UI (mock mode) | `prompts/phase-1-ui.md` | `frontend/` |
 | 2 | Phase 2: ML pipeline | `prompts/phase-2-ml-pipeline.md` | `backend/ml/`, `backend/models/` |
 | 3 | Phase 3: Backend API | `prompts/phase-3-backend-api.md` | `backend/app/` |
+| 3.5 | Advanced features (project owner, before Phase 4) | `prompts/phase-3.5-advanced-features.md` | Tier-1 filter, sarcasm flag, SHAP |
 | 4 | Phase 4: Integration and tests | `prompts/phase-4-integration-testing.md` | e2e tests, fixes, `docs/INTEGRATION_REPORT.md` |
 | 5 | Phase 5: Docker, docs, packaging | `prompts/phase-5-docker-docs.md` | Dockerfiles, reports, screenshots |
 
 ```mermaid
 flowchart LR
-    S[Step 0<br/>push starter repo] --> P1[Phase 1 UI] --> P2[Phase 2 ML] --> P3[Phase 3 API] --> P4[Phase 4 Integration] --> P5[Phase 5 Docker + docs] --> V[v1.0.0]
+    S[Step 0<br/>push starter repo] --> P1[Phase 1 UI] --> P2[Phase 2 ML] --> P3[Phase 3 API] --> P35[Phase 3.5 Advanced features] --> P4[Phase 4 Integration] --> P5[Phase 5 Docker + docs] --> V[v1.0.0]
 ```
+
+> **Phase 3.5 (advanced features)** was added by the project owner between Phase 3 and Phase 4. It adds three optional features
+> (Tier-1 filter, sarcasm flag, SHAP explanations) without changing the Phase 1-3 behavior. Members 4 and 5 simply pull the latest `main`
+> and continue as usual. Details: [`docs/ADVANCED_FEATURES.md`](docs/ADVANCED_FEATURES.md).
 
 ### The 8 golden rules
 
@@ -160,6 +168,10 @@ The same 6 steps apply to every member. Replace `N` with your phase number.
 - Builds the FastAPI service in `backend/app/` that loads the committed artifacts. No dataset needed.
 - Done when: `cd backend && python -m pytest tests -q` passes and every endpoint was tested with curl.
 
+### Phase 3.5: Advanced features (project owner, before Phase 4)
+- Adds the Tier-1 filter, the sarcasm flag and SHAP explanations as optional, switchable features. Prompt: `prompts/phase-3.5-advanced-features.md`. Tag: `phase-3.5-complete`.
+- Phases 4 and 5 do not need extra setup. Only if you want the SHAP explanations on your machine, see "Advanced features" below.
+
 ### Phase 4: Integration and testing (Member 4)
 - Switches the frontend from mock to the real API (`NEXT_PUBLIC_USE_MOCK=false`), fixes contract mismatches, adds Playwright end-to-end tests, writes `docs/INTEGRATION_REPORT.md`.
 - Also run once: `cd frontend && npx playwright install chromium`.
@@ -197,12 +209,31 @@ NEXT_PUBLIC_USE_MOCK=false
 cd backend && python -m ml.run_pipeline
 ```
 
+## 8.1 ADVANCED FEATURES (Phase 3.5, optional)
+
+| Feature | What it does | Switch (environment variable, default on) |
+|---|---|---|
+| Tier-1 rule filter | Hard rules (more than 5 reviews per minute from one user, the same text repeated 3+ times) flag spam instantly and skip the ML model. Soft signals (very short text, links, repeated characters) are reported but never change the verdict. | `ENABLE_TIER1` |
+| Sarcasm flag | Positive opening plus strong negative outcome raises `SARCASM_SUSPECTED` (needs human review). It never changes the fake verdict. | `ENABLE_SARCASM` |
+| SHAP explanations | `POST /api/explain` returns the words that pushed the SVM toward fake or genuine. Naive Bayes uses a log-probability explanation. | `ENABLE_SHAP` |
+
+Turn a feature off by setting its variable to `false` before starting the backend. With all three off, `/api/predict` behaves exactly as in Phase 3.
+
+Optional SHAP install (the app works without it, using coefficient scores instead):
+```bash
+pip install -r backend/requirements-advanced.txt -c backend/constraints-advanced.txt
+```
+The constraints file keeps numpy and scikit-learn at their pinned versions. Full details, examples and limitations: [`docs/ADVANCED_FEATURES.md`](docs/ADVANCED_FEATURES.md).
+
+---
+
 ## 9. API SUMMARY
 
 | Method | Path | Purpose |
 |---|---|---|
 | POST | `/api/predict` | Analyze one review |
 | POST | `/api/predict/batch` | Analyze a CSV (max 5000 rows) |
+| POST | `/api/explain` | Word-level explanation (SHAP for SVM) for one review |
 | GET | `/api/models` | Available models |
 | GET | `/api/models/metrics` | Training metrics (`metrics.json`) |
 | GET | `/api/history` | List past analyses |
@@ -237,6 +268,29 @@ Request and response shapes are defined in [`docs/LLD.md`](docs/LLD.md). Real ex
 
 ## 12. LIMITATIONS AND FUTURE WORK
 
-- Classical ML (TF-IDF, Naive Bayes, SVM) depends on the training dataset; results on other product domains may differ.
-- Detects text patterns, not whether a reviewer actually bought the product.
-- Future work: transformer models (BERT), reviewer behavior features, multilingual support, browser extension.
+**What the advanced features address (and what they do not)**
+
+| Problem | What was added | Status |
+|---|---|---|
+| Scalability: running the ML model on obvious spam wastes compute | Tier-1 rule filter skips the model for hard-rule spam (review flooding, repeated text) | Partially addressed. The rules are heuristics. No load test and no accuracy was measured. |
+| Context blindness: sarcastic reviews (positive opening, negative outcome) | Sarcasm risk flag `SARCASM_SUSPECTED` | Partially addressed. It is a flag for human review, not a verdict. Accuracy not measured, keyword lists are small. |
+| Explainability: why did the model say fake? | Token highlighting plus on-demand SHAP explanations | Addressed for the SVM. Naive Bayes uses a log-probability explanation. |
+| Hinglish / multilingual reviews | Nothing | **Not addressed.** The classifier is English only. |
+| Reviews written by LLMs (GPT-style text) | Nothing | **Not addressed.** |
+| Domain shift (trained on hotel reviews, used on products) | Nothing | **Not addressed.** A product-review training set is needed. |
+
+**Limitations (honest list)**
+- The classifier is trained on the Deceptive Opinion Spam Corpus (about 1,600 English **hotel** reviews). Results on other product domains can be much worse, and out-of-domain text may be labelled fake too often.
+- **English only.** Hindi and Hinglish text is not supported by the classifier. The few Hindi/Hinglish words in the sarcasm lists are plain keyword matches, not language understanding.
+- The Tier-1 filter and the sarcasm flag are **heuristics**. Their accuracy was not measured on a labelled dataset, so no accuracy is claimed. Sarcasm is a risk flag, not a fake verdict.
+- Tier-1 velocity and duplicate tracking is kept in memory per server process and resets on restart. It needs a shared store (for example Redis) to work across several server processes.
+- SHAP explains the linear SVM only; for a linear model it equals the coefficient times the TF-IDF value. Naive Bayes uses a log-probability explanation.
+- The model detects text patterns, not whether the reviewer actually bought the product. Star rating is not a model feature.
+- Not implemented: LLM-generated text detection (for example perplexity or burstiness with a language model) and transformer-based multilingual models.
+
+**Future work**
+- Fine-tune a multilingual transformer (for example MuRIL or XLM-RoBERTa) on a labelled Hinglish review set.
+- Add a labelled evaluation set for the Tier-1 and sarcasm heuristics so their precision and recall can be measured.
+- Reviewer behavior features (account age, posting history) and a shared store for velocity tracking.
+- Detection of machine-generated reviews, trained on a labelled LLM-vs-human review set.
+- A browser extension and a larger, multi-domain training set.
