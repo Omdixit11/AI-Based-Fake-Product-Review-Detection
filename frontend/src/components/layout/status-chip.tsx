@@ -52,8 +52,8 @@ export function StatusChip() {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 rounded-pill border border-line/15 bg-line/5 px-3 py-1.5",
-        "font-mono text-[11px] text-dim"
+        "inline-flex items-center gap-1.5 rounded-pill border border-line/15 bg-line/5 px-2.5 py-1 sm:gap-2 sm:px-3 sm:py-1.5",
+        "font-mono text-[11px] text-dim whitespace-nowrap shrink-0"
       )}
       title={
         health

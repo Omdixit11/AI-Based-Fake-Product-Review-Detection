@@ -77,7 +77,7 @@ export const realApi = {
     });
   },
 
-  async predictBatch(csvText: string, filename: string): Promise<BatchResult> {
+  async predictBatch(csvText: string, filename = "batch.csv"): Promise<BatchResult> {
     const form = new FormData();
     form.append("file", new Blob([csvText], { type: "text/csv" }), filename);
     return request<BatchResult>("/api/predict/batch", { method: "POST", body: form });
@@ -99,7 +99,9 @@ export const realApi = {
   }): Promise<HistoryListResponse> {
     const qs = new URLSearchParams();
     if (params.search) qs.set("search", params.search);
-    if (params.verdict) qs.set("verdict", params.verdict);
+    if (params.verdict === "fake" || params.verdict === "genuine") {
+      qs.set("verdict", params.verdict);
+    }
     if (params.limit !== undefined) qs.set("limit", String(params.limit));
     if (params.offset !== undefined) qs.set("offset", String(params.offset));
     const suffix = qs.toString() ? `?${qs.toString()}` : "";

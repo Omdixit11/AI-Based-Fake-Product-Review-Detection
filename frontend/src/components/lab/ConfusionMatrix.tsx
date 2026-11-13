@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
 
 /**
  * Confusion matrix heatmap. Layout is [[TN, FP], [FN, TP]] (positive = fake).
@@ -52,12 +51,7 @@ export function ConfusionMatrix({
               title={`${c.label} = ${c.value}`}
             >
               <span className="font-mono text-2xl font-bold text-ink">{c.value}</span>
-              <span
-                className={cn(
-                  "mt-1 font-mono text-[10px]",
-                  c.tone === "good" ? "text-genuine" : "text-fake"
-                )}
-              >
+              <span className="mt-1 font-mono text-[10px] font-semibold text-ink/90">
                 {c.label}
               </span>
             </motion.div>

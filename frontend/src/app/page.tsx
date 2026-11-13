@@ -63,7 +63,8 @@ export default function LandingPage() {
       .catch(() => setMetrics(null));
   }, []);
 
-  const best = metrics?.models[metrics.best_model]?.tfidf_sentiment;
+  const activeFeatureSet = metrics?.active_feature_set ?? "tfidf_only";
+  const best = metrics?.models[metrics.best_model]?.[activeFeatureSet];
 
   return (
     <div className="mx-auto w-full max-w-shell px-4 pb-16">
@@ -149,21 +150,21 @@ export default function LandingPage() {
         <div className="grid grid-cols-2 gap-6 text-center md:grid-cols-4">
           {[
             {
-              value: best ? best.accuracy : 0.909,
+              value: best ? best.accuracy * 100 : 0,
               decimals: 1,
               suffix: "%",
               label: "Accuracy",
-              hint: best ? `${metrics?.best_model.toUpperCase()} on the test set` : "SVM on the test set",
+              hint: best ? `${metrics?.best_model.toUpperCase()} on the test set` : "Model test set accuracy",
             },
             {
-              value: best ? best.f1 : 0.875,
+              value: best ? best.f1 * 100 : 0,
               decimals: 1,
               suffix: "%",
               label: "F1 score",
               hint: "harmonic mean of precision and recall",
             },
             {
-              value: metrics?.dataset.size ?? 1600,
+              value: metrics?.dataset.size ?? 0,
               decimals: 0,
               suffix: "",
               label: "Reviews trained on",

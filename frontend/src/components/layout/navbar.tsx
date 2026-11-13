@@ -31,7 +31,7 @@ export function Navbar() {
         </Link>
 
         {/* Desktop links with animated active pill */}
-        <div className="mx-auto hidden items-center gap-1 md:flex">
+        <div className="mx-auto hidden items-center gap-1 lg:flex">
           {NAV_LINKS.map((link) => {
             const active = pathname.startsWith(link.href);
             return (
@@ -57,7 +57,7 @@ export function Navbar() {
           })}
         </div>
 
-        <div className="ml-auto hidden items-center gap-2 md:flex">
+        <div className="ml-auto hidden items-center gap-2 lg:flex">
           <StatusChip />
           <ThemeToggle />
           <Link
@@ -73,7 +73,7 @@ export function Navbar() {
         </div>
 
         {/* Mobile controls */}
-        <div className="ml-auto flex items-center gap-2 md:hidden">
+        <div className="ml-auto flex items-center gap-2 lg:hidden">
           <StatusChip />
           <ThemeToggle />
           <button
@@ -95,7 +95,7 @@ export function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.18 }}
-            className="glass absolute top-[calc(100%+8px)] w-[calc(100%-2rem)] max-w-shell p-2 md:hidden"
+            className="glass absolute top-[calc(100%+8px)] w-[calc(100%-2rem)] max-w-shell p-2 lg:hidden"
           >
             {NAV_LINKS.map((link) => (
               <Link

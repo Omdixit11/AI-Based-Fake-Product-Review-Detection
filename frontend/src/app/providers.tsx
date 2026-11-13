@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -26,17 +27,24 @@ const ThemeContext = createContext<{ theme: Theme; toggle: () => void }>({
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
+  const mounted = useRef(false);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("truthlens-theme");
     if (saved === "light" || saved === "dark") {
       setTheme(saved);
+      document.documentElement.classList.toggle("light", saved === "light");
     } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
       setTheme("light");
+      document.documentElement.classList.add("light");
+    } else {
+      document.documentElement.classList.remove("light");
     }
+    mounted.current = true;
   }, []);
 
   useEffect(() => {
+    if (!mounted.current) return;
     document.documentElement.classList.toggle("light", theme === "light");
     window.localStorage.setItem("truthlens-theme", theme);
   }, [theme]);

@@ -39,7 +39,7 @@ function ResultPanel({
   const decidedByRules = result.model_used === "tier1_rules";
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-4">
       <motion.div {...reveal} transition={{ duration: 0.35 }}>
         <VerdictCard result={result} />
       </motion.div>
@@ -57,6 +57,7 @@ function ResultPanel({
         <motion.div {...reveal} transition={{ duration: 0.35, delay: 0.14 }}>
           <Card className="h-full">
             <CardHeader
+              as="h2"
               title="Sentiment"
               subtitle="VADER polarity profile"
               action={<MessageSquareText className="h-4 w-4 text-faint" aria-hidden />}
@@ -69,6 +70,7 @@ function ResultPanel({
       <motion.div {...reveal} transition={{ duration: 0.35, delay: 0.2 }}>
         <Card>
           <CardHeader
+            as="h2"
             title="Evidence highlights"
             subtitle="Words tinted by how strongly they push the verdict — hover for scores"
             action={<Type className="h-4 w-4 text-faint" aria-hidden />}
@@ -81,6 +83,7 @@ function ResultPanel({
         <motion.div {...reveal} transition={{ duration: 0.35, delay: 0.26 }}>
           <Card className="h-full">
             <CardHeader
+              as="h2"
               title="Top contributing tokens"
               subtitle={
                 decidedByRules
@@ -96,6 +99,7 @@ function ResultPanel({
         <motion.div {...reveal} transition={{ duration: 0.35, delay: 0.3 }}>
           <Card className="h-full">
             <CardHeader
+              as="h2"
               title="Red flags"
               subtitle="Rule-based signals, independent of the model"
               action={<ListChecks className="h-4 w-4 text-faint" aria-hidden />}
@@ -148,7 +152,7 @@ function EmptyState() {
         <FileText className="h-8 w-8" aria-hidden />
       </span>
       <div>
-        <h3 className="font-display text-lg font-semibold text-ink">No scan yet</h3>
+        <h2 className="font-display text-lg font-semibold text-ink">No scan yet</h2>
         <p className="mx-auto mt-1 max-w-xs text-sm text-faint">
           Paste a review on the left — or try a sample chip — and the full forensic
           breakdown will appear here.
@@ -253,7 +257,7 @@ export default function AnalyzePage() {
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <ReviewInput
           value={review}
           onChange={setReview}
@@ -267,11 +271,11 @@ export default function AnalyzePage() {
           onAnalyze={analyze}
         />
 
-        <div aria-live="polite">
+        <div aria-live="polite" className="min-w-0">
           {scanning && !result && <LoadingSkeleton />}
           {error && !scanning && !result && (
             <Card className="border-fake/30">
-              <h3 className="font-display text-lg font-semibold text-fake">Scan failed</h3>
+              <h2 className="font-display text-lg font-semibold text-fake">Scan failed</h2>
               <p className="mt-1 text-sm text-dim">{error}</p>
               <ButtonRetry onRetry={analyze} />
             </Card>

@@ -15,7 +15,7 @@
   --line: 148 163 184;     /* slate, used at low alpha */
   --ink: 237 239 245;
   --ink-dim: 168 174 190;
-  --ink-faint: 106 113 132;
+  --ink-faint: 140 148 168;
   --brand: 139 92 246;     /* violet */
   --aqua: 34 211 238;      /* cyan */
   --fake: 244 63 94;       /* crimson/coral */
@@ -36,11 +36,11 @@
   --line: 15 23 42;        /* slate-900, used at low alpha */
   --ink: 19 23 34;
   --ink-dim: 75 82 100;
-  --ink-faint: 135 142 160;
+  --ink-faint: 88 95 112;
   --brand: 124 58 237;
   --aqua: 8 145 178;
   --fake: 225 29 72;
-  --genuine: 5 150 105;
+  --genuine: 4 120 87;
   --warn: 217 119 6;
 
   --shadow-glass: 0 8px 32px -14px rgb(15 23 42 / 0.18);

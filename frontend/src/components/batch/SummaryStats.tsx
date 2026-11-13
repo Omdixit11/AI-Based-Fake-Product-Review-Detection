@@ -79,22 +79,22 @@ export function SummaryStats({ summary }: { summary: BatchSummary }) {
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
         {cards.map((c, i) => (
           <motion.div
             key={c.label}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.06 * i, duration: 0.3 }}
-            className="glass flex flex-col justify-between p-5"
+            className="glass flex flex-col justify-between p-4 sm:p-5"
           >
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] uppercase tracking-wider text-faint">
+            <div className="flex items-center justify-between gap-1.5 sm:gap-2">
+              <span className="min-w-0 font-mono text-[10px] uppercase leading-tight tracking-wider text-faint">
                 {c.label}
               </span>
-              {c.icon}
+              <span className="shrink-0">{c.icon}</span>
             </div>
-            <span className="mt-3 font-mono text-3xl font-bold text-ink">{c.value}</span>
+            <span className="mt-3 font-mono text-2xl font-bold text-ink sm:text-3xl">{c.value}</span>
           </motion.div>
         ))}
       </div>
