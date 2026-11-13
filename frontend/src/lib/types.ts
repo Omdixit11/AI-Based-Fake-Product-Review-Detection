@@ -141,7 +141,7 @@ export interface BatchSummary {
 export interface BatchRow {
   row: number;
   review: string;
-  rating?: number;
+  rating?: number | null;
   verdict: Verdict;
   fake_probability: number;
   confidence: number;
@@ -158,6 +158,8 @@ export interface BatchResult {
 export interface ModelInfo {
   models: ModelUsed[];
   default: ModelChoice;
+  best_model?: ModelUsed;
+  active_feature_set?: string;
 }
 
 export interface RocCurve {
@@ -216,6 +218,7 @@ export interface HistoryEntry {
 export interface HistoryListResponse {
   total: number;
   entries: HistoryEntry[];
+  items?: HistoryEntry[];
 }
 
 /* ---------- GET /api/health ---------- */

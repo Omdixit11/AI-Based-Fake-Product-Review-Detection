@@ -99,6 +99,7 @@ export function ReviewInput({
   return (
     <Card className="relative overflow-hidden">
       <CardHeader
+        as="h2"
         title="Review scanner"
         subtitle="Paste a product review — we do the forensics."
         action={

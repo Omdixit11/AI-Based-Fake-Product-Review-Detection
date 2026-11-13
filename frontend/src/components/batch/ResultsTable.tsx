@@ -43,7 +43,7 @@ export function ResultsTable({ rows }: { rows: BatchRow[] }) {
   const SortHeader = ({ label, k, className }: { label: string; k: SortKey; className?: string }) => (
     <th
       scope="col"
-      className={cn("px-4 py-3 text-left font-medium", className)}
+      className={cn("px-3 py-2.5 text-left font-medium sm:px-4 sm:py-3", className)}
       aria-sort={sortKey === k ? (asc ? "ascending" : "descending") : "none"}
     >
       <button
@@ -63,10 +63,13 @@ export function ResultsTable({ rows }: { rows: BatchRow[] }) {
 
   return (
     <div className="glass overflow-hidden p-0">
-      <div className="flex flex-wrap items-center gap-2 border-b border-line/10 px-5 py-4">
+      <div className="flex flex-wrap items-center gap-2 border-b border-line/10 px-4 py-3 sm:px-5 sm:py-4">
         <span className="font-display text-sm font-semibold text-ink">Results</span>
         <span className="font-mono text-[11px] text-faint">
           {filtered.length.toLocaleString()} of {rows.length.toLocaleString()} rows
+        </span>
+        <span className="font-mono text-[10px] text-faint sm:hidden">
+          · swipe to view all columns &rarr;
         </span>
         <div className="ml-auto flex gap-2">
           {(["all", "fake", "genuine"] as const).map((v) => (
@@ -78,11 +81,11 @@ export function ResultsTable({ rows }: { rows: BatchRow[] }) {
       </div>
 
       <div className="max-h-[520px] overflow-auto">
-        <table className="w-full border-collapse text-sm">
+        <table className="min-w-[580px] w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-elevate/95 backdrop-blur">
             <tr className="border-b border-line/10">
               <SortHeader label="#" k="row" />
-              <th scope="col" className="px-4 py-3 text-left font-mono text-[10px] uppercase tracking-wider text-faint">
+              <th scope="col" className="min-w-[200px] px-3 py-2.5 text-left font-mono text-[10px] uppercase tracking-wider text-faint sm:px-4 sm:py-3">
                 Review
               </th>
               <SortHeader label="Verdict" k="verdict" />
@@ -99,23 +102,23 @@ export function ResultsTable({ rows }: { rows: BatchRow[] }) {
                 transition={{ delay: Math.min(i * 0.02, 0.4), duration: 0.25 }}
                 className="border-b border-line/6 transition-colors hover:bg-line/4"
               >
-                <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-faint">
+                <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs text-faint sm:px-4 sm:py-3">
                   {r.row}
-                  {r.rating !== undefined && (
+                  {r.rating != null && r.rating > 0 && (
                     <span className="ml-1 text-warn" title={`${r.rating} star rating`}>
                       {"★".repeat(r.rating)}
                     </span>
                   )}
                 </td>
-                <td className="max-w-[420px] px-4 py-3 text-dim" title={r.review}>
+                <td className="max-w-[420px] px-3 py-2.5 text-dim sm:px-4 sm:py-3" title={r.review}>
                   {truncate(r.review, 96)}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-2.5 sm:px-4 sm:py-3">
                   <span className={cn("inline-flex rounded-pill px-2.5 py-0.5 text-xs font-medium", VERDICT_PILL[r.verdict])}>
                     {r.verdict}
                   </span>
                 </td>
-                <td className="px-4 py-3 font-mono text-xs">
+                <td className="px-3 py-2.5 font-mono text-xs sm:px-4 sm:py-3">
                   <span className="inline-flex items-center gap-2">
                     <span className="h-1.5 w-10 overflow-hidden rounded-pill bg-line/10">
                       <span
@@ -126,7 +129,7 @@ export function ResultsTable({ rows }: { rows: BatchRow[] }) {
                     {(r.fake_probability * 100).toFixed(0)}%
                   </span>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-dim">
+                <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs text-dim sm:px-4 sm:py-3">
                   {(r.confidence * 100).toFixed(0)}%
                 </td>
               </motion.tr>

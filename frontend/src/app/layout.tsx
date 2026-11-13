@@ -46,6 +46,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("truthlens-theme");var m=window.matchMedia("(prefers-color-scheme: light)").matches;if(t==="light"||(!t&&m)){document.documentElement.classList.add("light");}}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body
         className={`${grotesk.variable} ${inter.variable} ${jetbrains.variable} grain min-h-screen font-sans antialiased`}
       >

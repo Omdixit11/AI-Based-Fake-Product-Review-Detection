@@ -51,10 +51,15 @@ export function Tier1Banner({ tier1 }: { tier1?: Tier1Block }) {
 
           <ul className="mt-3 space-y-1.5">
             {hard.map((rule) => (
-              <li key={rule.code} className="flex items-center gap-2.5 text-sm text-ink">
-                <Ban className="h-3.5 w-3.5 shrink-0 text-fake" aria-hidden />
-                <span className="min-w-0 flex-1 truncate">{rule.label}</span>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-faint">
+              <li
+                key={rule.code}
+                className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-sm text-ink"
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <Ban className="h-3.5 w-3.5 shrink-0 text-fake" aria-hidden />
+                  <span className="break-words">{rule.label}</span>
+                </div>
+                <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-faint">
                   {rule.code}
                 </span>
               </li>

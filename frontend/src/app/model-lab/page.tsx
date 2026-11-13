@@ -92,6 +92,7 @@ export default function ModelLabPage() {
       <div className="mb-6 grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <Card>
           <CardHeader
+            as="h2"
             title="Dataset"
             subtitle={metrics.dataset.name}
             action={<Database className="h-4 w-4 text-faint" aria-hidden />}
@@ -118,6 +119,7 @@ export default function ModelLabPage() {
 
         <Card>
           <CardHeader
+            as="h2"
             title="Feature set"
             subtitle="Toggle to compare the two feature regimes"
             action={<Layers className="h-4 w-4 text-faint" aria-hidden />}
@@ -150,6 +152,7 @@ export default function ModelLabPage() {
         ).map((mo) => (
           <Card key={mo.name}>
             <CardHeader
+              as="h2"
               title={mo.name}
               subtitle={`ROC-AUC ${mo.m.roc_auc.toFixed(3)} · ${mo.isBest ? "selected as the best model" : "runner-up on this dataset"}`}
               action={
@@ -170,11 +173,11 @@ export default function ModelLabPage() {
       {/* Comparison + ROC */}
       <div className="mb-6 grid gap-4 lg:grid-cols-2">
         <Card>
-          <CardHeader title="Head-to-head" subtitle="Naive Bayes vs SVM" />
+          <CardHeader as="h2" title="Head-to-head" subtitle="Naive Bayes vs SVM" />
           <ComparisonBars nb={nb} svm={svm} />
         </Card>
         <Card>
-          <CardHeader title="ROC curves" subtitle="True positive rate vs false positive rate" />
+          <CardHeader as="h2" title="ROC curves" subtitle="True positive rate vs false positive rate" />
           <RocChart series={rocSeries} />
         </Card>
       </div>
@@ -182,6 +185,7 @@ export default function ModelLabPage() {
       {/* Confusion matrices */}
       <Card>
         <CardHeader
+          as="h2"
           title="Confusion matrices"
           subtitle="Positive class = fake · [[TN, FP], [FN, TP]]"
         />

@@ -124,9 +124,16 @@ export function ExplainPanel({
       <CardHeader
         title="Token attribution"
         subtitle="Ask the model which words it actually used, on demand"
+        as="h2"
         action={
           <div className="flex items-center gap-2">
-            <Button size="sm" variant={result ? "secondary" : "primary"} onClick={run} loading={loading}>
+            <Button
+              size="sm"
+              variant={result ? "secondary" : "primary"}
+              onClick={run}
+              loading={loading}
+              className="whitespace-nowrap shrink-0"
+            >
               {result ? <ChevronDown className="h-4 w-4" aria-hidden /> : <Sparkles className="h-4 w-4" aria-hidden />}
               {result ? "Re-explain" : "Explain with SHAP"}
             </Button>
