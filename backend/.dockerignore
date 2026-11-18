@@ -1,0 +1,13 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.venv
+venv
+env
+data/raw
+*.db
+*.sqlite3
+.env
+.env.local
