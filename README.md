@@ -1,296 +1,596 @@
-# TruthLens: AI-Based Fake Product Review Detection
 
-TruthLens is an end-to-end web app that tells whether a product review looks **fake or genuine**.
-It uses **NLP, TF-IDF, Sentiment Analysis (VADER), Naive Bayes and SVM**, a FastAPI backend and a premium Next.js interface.
+# TruthLens — AI-Based Fake Product Review Detection
 
-> **This README is protected. Nobody edits it.** It is the single source of truth for the whole team.
+<p align="center">
+  <strong>Detect Suspicious Reviews. Understand the Signals. Make Smarter Decisions.</strong>
+</p>
 
-![Analyze page](docs/screenshots/analyze-fake.png)
+<p align="center">
+  <a href="https://ai-based-fake-product-review-detect.vercel.app/">
+    <strong>🚀 LIVE DEMO</strong>
+  </a>
+  &nbsp; | &nbsp;
+  <a href="https://ai-based-fake-product-review-detection-b4hz.onrender.com/docs">
+    <strong>📚 API DOCUMENTATION</strong>
+  </a>
+  &nbsp; | &nbsp;
+  <a href="https://github.com/rohitgujjjar05feb-cloud/AI-Based-Fake-Product-Review-Detection">
+    <strong>💻 SOURCE CODE</strong>
+  </a>
+</p>
 
-*(Screenshots appear after Phase 5 is complete.)*
+<p align="center">
+  <img src="https://img.shields.io/badge/Frontend-Next.js-black?logo=next.js" alt="Next.js">
+  <img src="https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Language-Python-blue?logo=python" alt="Python">
+  <img src="https://img.shields.io/badge/Language-TypeScript-blue?logo=typescript" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Machine%20Learning-scikit--learn-orange?logo=scikitlearn" alt="Scikit-learn">
+  <img src="https://img.shields.io/badge/Deployment-Vercel-black?logo=vercel" alt="Vercel">
+  <img src="https://img.shields.io/badge/Deployment-Render-46E3B7?logo=render" alt="Render">
+</p>
+
+**Author: Team TruthLens**
+
+TruthLens is an AI-powered web application designed to analyze online product reviews and estimate whether a review resembles a **fake or genuine review**.
+
+It combines Natural Language Processing (NLP), TF-IDF feature extraction, sentiment analysis, and machine learning algorithms to identify suspicious review patterns.
+
+The application provides predictions, confidence scores, sentiment information, red flags, and explainability features through a modern and responsive web interface.
 
 ---
 
-## 1. Features
+## 🌐 Live Deployment
 
-- Single review analyzer: verdict, confidence, sentiment, red flags
-- Explainability: highlights the words that pushed the model toward fake or genuine
-- Model switch: Naive Bayes, SVM, or Best (auto)
-- Batch analysis: upload a CSV, get a summary, filter results, export CSV
-- Model Lab: accuracy, precision, recall, F1, ROC-AUC, confusion matrices, ROC curves, TF-IDF vs TF-IDF + sentiment
-- History of every analysis (search, filter, delete)
-- **Tier-1 rule filter:** instantly flags obvious spam (review flooding, copy-paste floods) before the ML model runs
-- **Sarcasm risk flag:** warns when a review opens positive but ends with a strongly negative outcome
-- **SHAP explanations:** on-demand explanation of which words pushed the SVM toward fake or genuine
-- "How it works" animated pipeline, dark and light theme, responsive
+| Component | Status | Link |
+|---|---|---|
+| Frontend | Live | [Open TruthLens](https://ai-based-fake-product-review-detect.vercel.app/) |
+| Backend API | Deployed | [Render Backend](https://ai-based-fake-product-review-detection-b4hz.onrender.com/) |
+| API Documentation | Available | [FastAPI Swagger Docs](https://ai-based-fake-product-review-detection-b4hz.onrender.com/docs) |
+| Health Check | Available | [API Health](https://ai-based-fake-product-review-detection-b4hz.onrender.com/api/health) |
+| GitHub Repository | Available | [View Source Code](https://github.com/rohitgujjjar05feb-cloud/AI-Based-Fake-Product-Review-Detection) |
 
-## 2. Tech stack
+**Deployment Architecture:**
+- Frontend: Vercel
+- Backend: Render
+- Database: SQLite
 
-| Layer | Tools |
+> Note: The backend uses Render's free hosting service. It may spin down after inactivity, so the first request can take some time to respond. The free filesystem is ephemeral, so SQLite history may not persist across restarts or redeployments.
+
+---
+
+## 📌 Table of Contents
+
+1. [Problem Statement](#-problem-statement)
+2. [Project Objectives](#-project-objectives)
+3. [Key Features](#-key-features)
+4. [Technology Stack](#-technology-stack)
+5. [System Architecture](#-system-architecture)
+6. [Machine Learning Workflow](#-machine-learning-workflow)
+7. [Dataset and Model Performance](#-dataset-and-model-performance)
+8. [Project Structure](#-project-structure)
+9. [Installation and Setup](#-installation-and-setup)
+10. [Docker Deployment](#-docker-deployment)
+11. [API Endpoints](#-api-endpoints)
+12. [Advanced Features](#-advanced-features)
+13. [Limitations](#-limitations)
+14. [Future Scope](#-future-scope)
+15. [Team Workflow](#-team-workflow)
+16. [Troubleshooting](#-troubleshooting)
+
+---
+
+## 🎯 Problem Statement
+
+Online reviews play an important role in customer purchasing decisions. However, fake, misleading, exaggerated, and deceptive reviews can influence customers and reduce trust in online platforms.
+
+Manually checking thousands of reviews is difficult and time-consuming.
+
+TruthLens addresses this problem by using NLP and machine learning techniques to analyze review text and identify patterns associated with deceptive or genuine reviews.
+
+## 🎯 Project Objectives
+
+- Identify suspicious and potentially deceptive review patterns.
+- Classify reviews as fake or genuine using machine learning.
+- Analyze the sentiment expressed in reviews.
+- Display prediction confidence and relevant text signals.
+- Support analysis of multiple reviews through CSV upload.
+- Provide explainability to help users understand model predictions.
+- Offer a simple, responsive, and user-friendly interface.
+
+---
+
+## ✨ Key Features
+
+### 1. Single Review Analysis
+- Enter a review and analyze it instantly.
+- Get a Fake/Genuine prediction.
+- View the model confidence score.
+- Analyze review sentiment.
+- Identify suspicious text patterns and red flags.
+
+### 2. Explainable AI
+- Highlights important words influencing predictions.
+- Provides word-level explanations.
+- Helps users understand why a model may classify a review as fake or genuine.
+
+### 3. Multiple Machine Learning Models
+- Multinomial Naive Bayes.
+- Support Vector Machine (SVM).
+- Best (Auto) model selection.
+
+### 4. Batch Review Analysis
+- Upload multiple reviews using a CSV file.
+- Analyze reviews in batches.
+- View summary results.
+- Filter analysis results.
+- Export results as CSV.
+
+### 5. Model Lab
+- View model performance metrics.
+- Accuracy, Precision, Recall, and F1-score.
+- ROC-AUC.
+- Confusion matrices.
+- ROC curves.
+- Compare TF-IDF and TF-IDF with sentiment features.
+
+### 6. Analysis History
+- View previous review analyses.
+- Search and filter history.
+- Delete individual records.
+- Clear analysis history.
+
+### 7. Advanced Detection Features
+- Tier-1 rule-based spam filtering.
+- Sarcasm risk identification.
+- SHAP-based explanations for the linear SVM.
+- Log-probability explanations for Naive Bayes.
+
+### 8. Modern User Interface
+- Responsive Next.js interface.
+- Dark and light themes.
+- Animated user interface.
+- Interactive analysis dashboard.
+- How It Works pipeline visualization.
+
+---
+
+## 🛠 Technology Stack
+
+| Category | Technologies |
 |---|---|
-| Frontend | Next.js 14+, TypeScript, Tailwind CSS, Framer Motion, Recharts |
-| Backend | Python 3.11/3.12, FastAPI, Pydantic v2, SQLAlchemy + SQLite |
-| ML / NLP | scikit-learn (TF-IDF, MultinomialNB, SVM), NLTK (VADER, WordNet), imbalanced-learn |
-| Testing | pytest, Playwright |
-| Packaging | Docker, docker compose |
-
-## 3. Architecture (HLD)
-
-```mermaid
-flowchart LR
-    A[Dataset] --> B[Preprocess] --> C[Features: TF-IDF + VADER] --> D[Train NB + SVM] --> E[Evaluate] --> F[(models/*.pkl + metrics.json)]
-    U[Browser] --> FE[Next.js :3000] --> API[FastAPI :8000] --> P[Predictor]
-    F --> P
-    API --> DB[(SQLite history)]
-```
-
-Full diagrams: [`docs/HLD.md`](docs/HLD.md) and [`docs/LLD.md`](docs/LLD.md). Folder tree: [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md).
-
-**Golden design rule:** training and inference use the exact same `clean_text()`, vectorizer and scaler. The backend imports them from `backend/ml/` and never re-implements them.
+| Frontend | Next.js 14+, TypeScript |
+| Styling | Tailwind CSS |
+| Animations | Framer Motion |
+| Charts | Recharts |
+| Backend | Python, FastAPI |
+| API Validation | Pydantic v2 |
+| Database | SQLite, SQLAlchemy |
+| Machine Learning | Scikit-learn |
+| NLP | TF-IDF, NLTK |
+| Sentiment Analysis | VADER |
+| ML Algorithms | Multinomial Naive Bayes, SVM |
+| Explainability | SHAP |
+| Testing | Pytest, Playwright |
+| Containerization | Docker, Docker Compose |
+| Frontend Hosting | Vercel |
+| Backend Hosting | Render |
+| Version Control | Git, GitHub |
 
 ---
 
-## 4. TEAM WORKFLOW (5 members, 5 phases, strict order)
+## 🏗 System Architecture
 
-Each member completes **one phase**, pushes it to GitHub, and only then does the next member start.
-Nobody works in parallel. Nobody skips a phase.
-
-| Member | Phase | Prompt file to give the agent | Result in the repo |
-|---|---|---|---|
-| 1 | Phase 1: UI (mock mode) | `prompts/phase-1-ui.md` | `frontend/` |
-| 2 | Phase 2: ML pipeline | `prompts/phase-2-ml-pipeline.md` | `backend/ml/`, `backend/models/` |
-| 3 | Phase 3: Backend API | `prompts/phase-3-backend-api.md` | `backend/app/` |
-| 3.5 | Advanced features (project owner, before Phase 4) | `prompts/phase-3.5-advanced-features.md` | Tier-1 filter, sarcasm flag, SHAP |
-| 4 | Phase 4: Integration and tests | `prompts/phase-4-integration-testing.md` | e2e tests, fixes, `docs/INTEGRATION_REPORT.md` |
-| 5 | Phase 5: Docker, docs, packaging | `prompts/phase-5-docker-docs.md` | Dockerfiles, reports, screenshots |
-
-```mermaid
-flowchart LR
-    S[Step 0<br/>push starter repo] --> P1[Phase 1 UI] --> P2[Phase 2 ML] --> P3[Phase 3 API] --> P35[Phase 3.5 Advanced features] --> P4[Phase 4 Integration] --> P5[Phase 5 Docker + docs] --> V[v1.0.0]
+```text
+              USER
+                |
+                v
+       NEXT.JS FRONTEND
+         (Vercel Hosting)
+                |
+                v
+          FASTAPI BACKEND
+          (Render Hosting)
+                |
+                v
+       TEXT PREPROCESSING
+                |
+                v
+       TF-IDF FEATURE EXTRACTION
+                |
+                v
+       MACHINE LEARNING MODELS
+          /             \
+         v               v
+   NAIVE BAYES           SVM
+          \             /
+           v           v
+          PREDICTION
+                |
+       +--------+--------+
+       |        |        |
+       v        v        v
+   SENTIMENT CONFIDENCE EXPLANATION
+       |        |        |
+       +--------+--------+
+                |
+                v
+        RESULTS DASHBOARD
 ```
 
-> **Phase 3.5 (advanced features)** was added by the project owner between Phase 3 and Phase 4. It adds three optional features
-> (Tier-1 filter, sarcasm flag, SHAP explanations) without changing the Phase 1-3 behavior. Members 4 and 5 simply pull the latest `main`
-> and continue as usual. Details: [`docs/ADVANCED_FEATURES.md`](docs/ADVANCED_FEATURES.md).
+**Important:** Training and inference use the same text-cleaning function and fitted preprocessing artifacts to maintain consistency.
 
-### The 8 golden rules
+For detailed diagrams, refer to:
+- `docs/HLD.md`
+- `docs/LLD.md`
+- `docs/PROJECT_STRUCTURE.md`
 
-1. **Nobody edits `README.md`.** Also never edit `docs/HLD.md`, `docs/LLD.md`, `docs/PROJECT_STRUCTURE.md`, anything in `prompts/`, `.githooks/`, `scripts/check_phase.py` or `scripts/protected.sha256`. A git hook blocks it and the checker script detects it.
-2. **Strict order.** Start your phase only after the previous member has pushed their tag (`phase-N-complete`).
-3. **Do only your own phase.** Do not rewrite earlier work. If you find a real problem in an earlier phase, tell that member (or the team) instead of fixing it silently. Phase 4 is the only phase allowed to make small contract fixes.
-4. **Always run the checker.** `python scripts/check_phase.py --ready N` before you start, and `python scripts/check_phase.py N` before you push.
-5. **Never force-push** (`--force` is forbidden). If a push is rejected, `git pull --rebase origin main`, re-check, push again.
-6. **Do not commit** `node_modules`, `.venv`, `.env.local`, `*.db`, or the raw dataset. (They are already in `.gitignore`.)
-7. **Work on a branch, then merge to `main`.** Branch names are fixed in each prompt (for example `phase-2-ml`).
-8. **Tell the next member** (WhatsApp/Discord) the moment you push.
+---
 
-You can see team progress anytime with:
-```bash
-git fetch --tags && git tag -l "phase-*"
+## 🤖 Machine Learning Workflow
+
+TruthLens follows a text-classification workflow:
+
+1. Review text is received from the frontend.
+2. Text preprocessing and cleaning are performed.
+3. TF-IDF converts text into numerical features.
+4. Machine learning models process the extracted features.
+5. Naive Bayes and SVM generate predictions.
+6. Sentiment analysis is performed using VADER.
+7. Confidence and explanation information are prepared.
+8. Results are returned through the FastAPI backend.
+9. The frontend displays the analysis.
+
+### Algorithms Used
+
+**TF-IDF (Term Frequency–Inverse Document Frequency)**
+
+Converts text into numerical features based on the importance of words.
+
+**Multinomial Naive Bayes**
+
+A probabilistic classification algorithm commonly used for text classification.
+
+**Support Vector Machine (SVM)**
+
+A supervised machine learning algorithm that finds a decision boundary between classes.
+
+**VADER Sentiment Analysis**
+
+Analyzes sentiment polarity and helps identify positive, negative, or neutral language.
+
+---
+
+## 📊 Dataset and Model Performance
+
+### Dataset
+
+The project uses the **Deceptive Opinion Spam Corpus** by Ott et al. (2011).
+
+- Approximately 1,600 English hotel reviews.
+- Approximately 800 deceptive reviews.
+- Approximately 800 truthful reviews.
+
+### Model Evaluation
+
+For the latest measured results, refer to:
+
+[`docs/MODEL_REPORT.md`](docs/MODEL_REPORT.md)
+
+The report contains the model evaluation metrics and supporting results.
+
+Important: The training dataset consists of hotel reviews, whereas the application is intended for product-review analysis. Therefore, performance may vary when analyzing reviews from different domains.
+
+Predictions should be treated as model-based estimates, not absolute proof of deception.
+
+---
+
+## 📁 Project Structure
+
+```text
+AI-Based-Fake-Product-Review-Detection/
+│
+├── backend/
+│   ├── app/
+│   │   ├── routers/
+│   │   └── main.py
+│   │
+│   ├── ml/
+│   ├── models/
+│   ├── tests/
+│   ├── requirements.txt
+│   └── Dockerfile
+│
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── Dockerfile
+│
+├── docs/
+│   ├── HLD.md
+│   ├── LLD.md
+│   ├── API.md
+│   ├── MODEL_REPORT.md
+│   └── PRESENTATION_NOTES.md
+│
+├── prompts/
+├── scripts/
+├── docker-compose.yml
+├── Makefile
+└── README.md
 ```
 
 ---
 
-## 5. STEP 0: create the repo (Member 1 only, once)
+## 💻 Installation and Setup
 
-1. Unzip the starter project so you have a `truthlens/` folder.
-2. Create an **empty** GitHub repo (no README, no .gitignore, no license), for example `truthlens`.
-3. In the `truthlens/` folder:
+### Prerequisites
+
+Install the following:
+
+- Git
+- Python 3.11 or 3.12
+- Node.js 20+
+- npm
+- VS Code or another suitable IDE
+
+### Step 1: Clone the Repository
+
 ```bash
-git init
-git add -A
-git update-index --chmod=+x .githooks/pre-commit
-git commit -m "chore: starter skeleton"
-git branch -M main
-git remote add origin https://github.com/<your-username>/truthlens.git
-git push -u origin main
-git tag starter
-git push origin starter
+git clone https://github.com/rohitgujjjar05feb-cloud/AI-Based-Fake-Product-Review-Detection.git
 ```
-4. GitHub, Settings, Collaborators: add the other 4 members with **Write** access.
-5. Tell the team the repo URL.
 
----
-
-## 6. SETUP FOR EVERY MEMBER (do this once on your computer)
-
-Install: **Git**, **Python 3.11 or 3.12**, **Node.js 20+**, and the **Antigravity** IDE. Member 5 also needs **Docker Desktop**.
+Navigate into the project:
 
 ```bash
-git clone https://github.com/<your-username>/truthlens.git
-cd truthlens
-git config core.hooksPath .githooks        # enables the protection hook (Windows: use Git Bash)
+cd AI-Based-Fake-Product-Review-Detection
+```
 
+### Step 2: Backend Setup
+
+Create a Python virtual environment:
+
+```bash
 python -m venv .venv
-source .venv/bin/activate                  # Windows: .venv\Scripts\activate
+```
+
+Activate it.
+
+**Windows PowerShell:**
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+**Linux / macOS:**
+
+```bash
+source .venv/bin/activate
+```
+
+Install dependencies:
+
+```bash
 pip install -r backend/requirements.txt
+```
+
+Download required NLTK resources:
+
+```bash
 python scripts/download_nltk.py
 ```
-Open the **`truthlens/` folder** (the repo root) as the workspace in Antigravity.
 
-> Python packages are **pinned** on purpose. The trained `.pkl` files only load correctly with the same scikit-learn version, so do not upgrade packages.
+Start the backend:
 
----
-
-## 7. YOUR PHASE, STEP BY STEP
-
-The same 6 steps apply to every member. Replace `N` with your phase number.
-
-1. **Get the latest code**
-   ```bash
-   git checkout main
-   git pull origin main --tags
-   ```
-2. **Check that earlier phases are complete**
-   ```bash
-   python scripts/check_phase.py --ready N
-   ```
-   If it says NOT READY, stop and tell the previous member. (Phase 1 has no earlier phase.)
-3. **Give your phase prompt to the Antigravity agent.** Open `prompts/phase-N-....md`, copy the whole file, paste it into the agent, and let it work. The prompt itself tells the agent to create your branch.
-4. **Verify your phase**
-   ```bash
-   python scripts/check_phase.py N
-   ```
-   It must print `OK. All checks passed.`
-5. **Hand off to GitHub.** The prompt ends with exact git commands (commit, merge into `main`, push, tag `phase-N-complete`). Run them (or let the agent run them) and confirm the push worked.
-6. **Message the next member.**
-
-### Phase 1: UI (Member 1)
-- Starts from the empty skeleton. Builds the whole Next.js frontend in `frontend/` using **mock data**.
-- Done when: `npm run build` passes and all 6 pages work in mock mode, dark and light.
-
-### Phase 2: ML pipeline (Member 2)
-- **You must download the dataset first** and place it at `backend/data/raw/reviews.csv` (for example the Deceptive Opinion Spam Corpus, or a Yelp/Amazon fake-review dataset from Kaggle). The dataset is **not** stored in git.
-- Trains Naive Bayes and SVM, writes `backend/models/*.pkl` and `metrics.json`. These artifacts **are** committed so later members do not need the dataset.
-- Done when: the pipeline ran on the real dataset, every file in `backend/models/` is under 90 MB, tests pass.
-
-### Phase 3: Backend API (Member 3)
-- Builds the FastAPI service in `backend/app/` that loads the committed artifacts. No dataset needed.
-- Done when: `cd backend && python -m pytest tests -q` passes and every endpoint was tested with curl.
-
-### Phase 3.5: Advanced features (project owner, before Phase 4)
-- Adds the Tier-1 filter, the sarcasm flag and SHAP explanations as optional, switchable features. Prompt: `prompts/phase-3.5-advanced-features.md`. Tag: `phase-3.5-complete`.
-- Phases 4 and 5 do not need extra setup. Only if you want the SHAP explanations on your machine, see "Advanced features" below.
-
-### Phase 4: Integration and testing (Member 4)
-- Switches the frontend from mock to the real API (`NEXT_PUBLIC_USE_MOCK=false`), fixes contract mismatches, adds Playwright end-to-end tests, writes `docs/INTEGRATION_REPORT.md`.
-- Also run once: `cd frontend && npx playwright install chromium`.
-- Done when: both services run together, e2e tests pass, report is written.
-
-### Phase 5: Docker, docs and packaging (Member 5)
-- Adds Dockerfiles and `docker-compose.yml`, generates `docs/MODEL_REPORT.md`, `docs/API.md`, `docs/PRESENTATION_NOTES.md` and the 9 screenshots shown in this README.
-- Done when: `docker compose up --build` works and all docs exist. Final tag: `v1.0.0`.
-
----
-
-## 8. RUNNING THE FINISHED APP
-
-**With Docker (after Phase 5)**
 ```bash
-docker compose up --build
+cd backend
+uvicorn app.main:app --reload --port 8000
 ```
-Open http://localhost:3000 (API docs at http://localhost:8000/docs).
 
-**Without Docker (two terminals)**
+Backend URL:
+
+```text
+http://localhost:8000
+```
+
+API documentation:
+
+```text
+http://localhost:8000/docs
+```
+
+### Step 3: Frontend Setup
+
+Open a second terminal in the project root.
+
+Navigate to the frontend:
+
 ```bash
-# terminal 1
-cd backend && uvicorn app.main:app --reload --port 8000
-# terminal 2
-cd frontend && npm install && npm run dev
+cd frontend
 ```
-Make sure `frontend/.env.local` contains:
+
+Install dependencies:
+
+```bash
+npm install
 ```
+
+Create a file named `.env.local` inside the frontend folder.
+
+Add:
+
+```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
 NEXT_PUBLIC_USE_MOCK=false
 ```
 
-**Retrain the models (needs the dataset)**
+Start the frontend:
+
 ```bash
-cd backend && python -m ml.run_pipeline
+npm run dev
 ```
 
-## 8.1 ADVANCED FEATURES (Phase 3.5, optional)
+Open:
 
-| Feature | What it does | Switch (environment variable, default on) |
-|---|---|---|
-| Tier-1 rule filter | Hard rules (more than 5 reviews per minute from one user, the same text repeated 3+ times) flag spam instantly and skip the ML model. Soft signals (very short text, links, repeated characters) are reported but never change the verdict. | `ENABLE_TIER1` |
-| Sarcasm flag | Positive opening plus strong negative outcome raises `SARCASM_SUSPECTED` (needs human review). It never changes the fake verdict. | `ENABLE_SARCASM` |
-| SHAP explanations | `POST /api/explain` returns the words that pushed the SVM toward fake or genuine. Naive Bayes uses a log-probability explanation. | `ENABLE_SHAP` |
-
-Turn a feature off by setting its variable to `false` before starting the backend. With all three off, `/api/predict` behaves exactly as in Phase 3.
-
-Optional SHAP install (the app works without it, using coefficient scores instead):
-```bash
-pip install -r backend/requirements-advanced.txt -c backend/constraints-advanced.txt
+```text
+http://localhost:3000
 ```
-The constraints file keeps numpy and scikit-learn at their pinned versions. Full details, examples and limitations: [`docs/ADVANCED_FEATURES.md`](docs/ADVANCED_FEATURES.md).
+
+The application should now connect to your local FastAPI backend.
 
 ---
 
-## 9. API SUMMARY
+## 🐳 Docker Deployment
 
-| Method | Path | Purpose |
-|---|---|---|
-| POST | `/api/predict` | Analyze one review |
-| POST | `/api/predict/batch` | Analyze a CSV (max 5000 rows) |
-| POST | `/api/explain` | Word-level explanation (SHAP for SVM) for one review |
-| GET | `/api/models` | Available models |
-| GET | `/api/models/metrics` | Training metrics (`metrics.json`) |
-| GET | `/api/history` | List past analyses |
-| DELETE | `/api/history/{id}` | Delete one |
-| DELETE | `/api/history` | Clear all |
-| GET | `/api/health` | Service status |
+Docker is supported for running the application services together.
 
-Request and response shapes are defined in [`docs/LLD.md`](docs/LLD.md). Real examples are in `docs/API.md` (Phase 5).
+From the project root:
 
-## 10. HELPFUL COMMANDS
+```bash
+docker compose up --build
+```
 
-| Command | What it does |
+Access the application:
+
+| Service | URL |
 |---|---|
-| `python scripts/check_phase.py --ready N` | Are all phases before N complete? Run before you start. |
-| `python scripts/check_phase.py N` | Is phase N complete? Run before you push. |
-| `make setup` / `make test` / `make train` | Shortcuts (Mac/Linux, or Windows with make installed) |
-| `git tag -l "phase-*"` | See which phases are finished |
+| Frontend | http://localhost:3000 |
+| Backend | http://localhost:8000 |
+| API Documentation | http://localhost:8000/docs |
 
-## 11. TROUBLESHOOTING
+To stop the containers:
 
-| Problem | Fix |
-|---|---|
-| `check_phase.py` says a protected file was modified | `git checkout origin/main -- <file>` to restore it |
-| Commit blocked: "protected files" | You edited a protected file. Undo with `git restore --staged --worktree -- <file>` |
-| `--ready` says tag not found | `git pull origin main --tags` |
-| Push rejected | `git pull --rebase origin main`, run the check again, push. Never `--force`. |
-| `LookupError: vader_lexicon / wordnet` | `python scripts/download_nltk.py` |
-| Model file fails to load | You have different package versions. Reinstall with `pip install -r backend/requirements.txt` |
-| CORS error in browser | Backend `CORS_ORIGINS` must include `http://localhost:3000` |
-| Port already in use | Stop the other process or change the port |
-| A `.pkl` file is over 100 MB | Phase 2 must shrink it (fewer TF-IDF features, linear SVM) before pushing |
+```bash
+docker compose down
+```
 
-## 12. LIMITATIONS AND FUTURE WORK
+---
 
-**What the advanced features address (and what they do not)**
+## 🔌 API Endpoints
 
-| Problem | What was added | Status |
+Base URL:
+
+```text
+https://ai-based-fake-product-review-detection-b4hz.onrender.com
+```
+
+| Method | Endpoint | Description |
 |---|---|---|
-| Scalability: running the ML model on obvious spam wastes compute | Tier-1 rule filter skips the model for hard-rule spam (review flooding, repeated text) | Partially addressed. The rules are heuristics. No load test and no accuracy was measured. |
-| Context blindness: sarcastic reviews (positive opening, negative outcome) | Sarcasm risk flag `SARCASM_SUSPECTED` | Partially addressed. It is a flag for human review, not a verdict. Accuracy not measured, keyword lists are small. |
-| Explainability: why did the model say fake? | Token highlighting plus on-demand SHAP explanations | Addressed for the SVM. Naive Bayes uses a log-probability explanation. |
-| Hinglish / multilingual reviews | Nothing | **Not addressed.** The classifier is English only. |
-| Reviews written by LLMs (GPT-style text) | Nothing | **Not addressed.** |
-| Domain shift (trained on hotel reviews, used on products) | Nothing | **Not addressed.** A product-review training set is needed. |
+| POST | `/api/predict` | Analyze a single review |
+| POST | `/api/predict/batch` | Analyze multiple reviews using CSV |
+| POST | `/api/explain` | Generate review explanations |
+| GET | `/api/models` | Get available models |
+| GET | `/api/models/metrics` | Get model performance metrics |
+| GET | `/api/history` | Retrieve analysis history |
+| DELETE | `/api/history/{id}` | Delete a history record |
+| DELETE | `/api/history` | Clear analysis history |
+| GET | `/api/health` | Check backend health |
 
-**Limitations (honest list)**
-- The classifier is trained on the Deceptive Opinion Spam Corpus (about 1,600 English **hotel** reviews). Results on other product domains can be much worse, and out-of-domain text may be labelled fake too often.
-- **English only.** Hindi and Hinglish text is not supported by the classifier. The few Hindi/Hinglish words in the sarcasm lists are plain keyword matches, not language understanding.
-- The Tier-1 filter and the sarcasm flag are **heuristics**. Their accuracy was not measured on a labelled dataset, so no accuracy is claimed. Sarcasm is a risk flag, not a fake verdict.
-- Tier-1 velocity and duplicate tracking is kept in memory per server process and resets on restart. It needs a shared store (for example Redis) to work across several server processes.
-- SHAP explains the linear SVM only; for a linear model it equals the coefficient times the TF-IDF value. Naive Bayes uses a log-probability explanation.
-- The model detects text patterns, not whether the reviewer actually bought the product. Star rating is not a model feature.
-- Not implemented: LLM-generated text detection (for example perplexity or burstiness with a language model) and transformer-based multilingual models.
+Explore and test the endpoints:
 
-**Future work**
-- Fine-tune a multilingual transformer (for example MuRIL or XLM-RoBERTa) on a labelled Hinglish review set.
-- Add a labelled evaluation set for the Tier-1 and sarcasm heuristics so their precision and recall can be measured.
-- Reviewer behavior features (account age, posting history) and a shared store for velocity tracking.
-- Detection of machine-generated reviews, trained on a labelled LLM-vs-human review set.
-- A browser extension and a larger, multi-domain training set.
+[Open Interactive Swagger API Documentation](https://ai-based-fake-product-review-detection-b4hz.onrender.com/docs)
+
+---
+
+## 🔬 Advanced Features
+
+| Feature | Description |
+|---|---|
+| Tier-1 Rule Filter | Detects configured spam patterns such as repeated text and review flooding. |
+| Sarcasm Risk Flag | Identifies selected positive-opening/negative-outcome patterns for human review. |
+| SHAP Explanations | Provides word-level explanations for the linear SVM. |
+| Naive Bayes Explanation | Uses log-probability-based explanations. |
+
+### Environment Switches
+
+| Variable | Purpose |
+|---|---|
+| `ENABLE_TIER1` | Enable or disable Tier-1 filtering |
+| `ENABLE_SARCASM` | Enable or disable sarcasm risk detection |
+| `ENABLE_SHAP` | Enable or disable SHAP explanations |
+
+These features are configurable and their heuristic components should not be treated as independently validated classifiers.
+
+---
+
+## ⚠️ Limitations
+
+- The current classifier is trained on approximately 1,600 English hotel reviews.
+- Product-review performance may differ because of domain shift.
+- Hindi and Hinglish review classification is not currently supported.
+- The model analyzes text patterns; it cannot verify actual purchases.
+- Star ratings and reviewer account history are not model inputs.
+- Tier-1 filtering and sarcasm detection are heuristic features whose accuracy has not been independently measured on a labelled dataset.
+- Sarcasm detection is a warning for human review, not a fake-review verdict.
+- SHAP explanations apply to the linear SVM; Naive Bayes uses a different explanation method.
+- The free hosting setup may have cold-start delays and non-persistent SQLite history.
+
+---
+
+## 🚀 Future Scope
+
+Potential improvements include:
+
+- Training on larger, labelled product-review datasets.
+- Supporting Hindi and Hinglish using multilingual models such as MuRIL or XLM-RoBERTa.
+- Improving domain generalization across shopping categories.
+- Evaluating heuristic features on labelled datasets.
+- Adding reviewer behaviour analysis where appropriate data is available.
+- Improving LLM-generated review detection.
+- Adding persistent cloud database storage.
+- Improving scalability, monitoring, and production deployment.
+
+---
+
+## 👥 Team Workflow
+
+The project was developed through five major phases and an additional advanced-features phase.
+
+| Phase | Contribution |
+|---|---|
+| Phase 1 | Frontend UI and mock integration |
+| Phase 2 | Machine Learning pipeline |
+| Phase 3 | FastAPI backend development |
+| Phase 3.5 | Advanced detection and explainability features |
+| Phase 4 | Frontend/backend integration and testing |
+| Phase 5 | Docker, documentation, and packaging |
+
+The repository contains phase-specific prompts, scripts, and documentation for the development workflow.
+
+---
+
+## 🛠 Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| API appears offline | Check whether the Render backend is awake and responding. Retry after waiting. |
+| CORS error | Verify that `CORS_ORIGINS` includes the exact deployed frontend URL. |
+| Frontend uses mock data | Verify `NEXT_PUBLIC_USE_MOCK=false` in Vercel and redeploy. |
+| API URL error | Verify `NEXT_PUBLIC_API_URL` in Vercel and redeploy. |
+| Missing NLTK resources | Run `python scripts/download_nltk.py`. |
+| Model loading error | Install the pinned backend dependencies. |
+| Port already in use | Stop the existing process or use another available port. |
+| Slow first request | Render Free may spin down after inactivity. Wait for the backend to wake up. |
+
+---
+
+## 📚 References
+
+1. Ott, M., Choi, Y., Cardie, C., & Hancock, J. T. (2011). *Finding Deceptive Opinion Spam by Any Stretch of the Imagination.*
+2. Scikit-learn Documentation — https://scikit-learn.org/
+3. FastAPI Documentation — https://fastapi.tiangolo.com/
+4. Next.js Documentation — https://nextjs.org/docs
+5. NLTK Documentation — https://www.nltk.org/
+6. VADER Sentiment Analysis — https://github.com/cjhutto/vaderSentiment
+
+---
+
+<p align="center">
+  <strong>Built with ❤️ by Team TruthLens</strong>
+  <br>
+  AI-Based Fake Product Review Detection
+  <br><br>
+  <a href="https://ai-based-fake-product-review-detect.vercel.app/">
+    🚀 Try TruthLens Live
+  </a>
+</p>
